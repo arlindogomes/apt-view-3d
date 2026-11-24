@@ -71,7 +71,11 @@ export const PlayCanvasViewport: React.FC = () => {
 
   return (
     <div
-      className="relative flex-1 h-full bg-[#0f1117] overflow-hidden"
+      className="relative flex-1 h-full overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(circle at 50% 44%, #7a808a 0%, #525760 55%, #373b43 100%)',
+      }}
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragOver(true);

@@ -10,6 +10,7 @@ import { useSceneStore } from './store/sceneStore';
 
 export function App() {
   const toastMessage = useSceneStore((s) => s.toastMessage);
+  const isInspectorVisible = useSceneStore((s) => s.isInspectorVisible);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -25,8 +26,8 @@ export function App() {
 
       const state = useSceneStore.getState();
 
-      // Undo / Redo
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      // Undo / Redo (Ctrl+Z / Ctrl+Y)
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) {
         e.preventDefault();
         if (e.shiftKey) {
           state.redo();
@@ -35,14 +36,14 @@ export function App() {
         }
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || e.key.toLowerCase() === 'y')) {
         e.preventDefault();
         state.redo();
         return;
       }
 
-      // Duplicate
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+      // Duplicate (Ctrl+D)
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyD' || e.key.toLowerCase() === 'd')) {
         e.preventDefault();
         if (state.selectedId) {
           state.duplicateEntity(state.selectedId);
@@ -60,18 +61,20 @@ export function App() {
       }
 
       // Skip W/E/R in FPS mode because WASD moves the camera
-      if (state.cameraMode !== 'fps') {
-        const k = e.key.toLowerCase();
-        if (k === 'w') {
+      if (state.cameraMode !== 'fps' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.code === 'KeyW' || e.key.toLowerCase() === 'w') {
+          e.preventDefault();
           state.setToolMode('select');
           state.setGizmoMode('translate');
-        } else if (k === 'e') {
+        } else if (e.code === 'KeyE' || e.key.toLowerCase() === 'e') {
+          e.preventDefault();
           state.setToolMode('select');
           state.setGizmoMode('rotate');
-        } else if (k === 'r') {
+        } else if (e.code === 'KeyR' || e.key.toLowerCase() === 'r') {
+          e.preventDefault();
           state.setToolMode('select');
           state.setGizmoMode('scale');
-        } else if (k === 'f') {
+        } else if (e.code === 'KeyF' || e.key.toLowerCase() === 'f') {
           e.preventDefault();
           state.triggerFocusSelected();
         }
@@ -89,7 +92,7 @@ export function App() {
       <main className="flex-1 flex min-h-0 overflow-hidden">
         <HierarchyPanel />
         <PlayCanvasViewport />
-        <InspectorPanel />
+        {isInspectorVisible && <InspectorPanel />}
       </main>
 
       <StatusBar />

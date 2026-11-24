@@ -204,6 +204,22 @@ export function createSampleEntities(): SceneEntityData[] {
   ];
 }
 
+function normalizeLighting(val: unknown): LightingPreset {
+  const valid: LightingPreset[] = [
+    'studio_neutral',
+    'studio_warm',
+    'daylight',
+    'sunset',
+    'industrial_loft',
+    'night_showroom',
+  ];
+  if (typeof val === 'string' && valid.includes(val as LightingPreset)) {
+    return val as LightingPreset;
+  }
+  if (val === 'day') return 'daylight';
+  return 'studio_neutral';
+}
+
 function loadDraft(): {
   projectName: string;
   lighting: LightingPreset;
@@ -216,7 +232,7 @@ function loadDraft(): {
       if (Array.isArray(parsed.entities) && parsed.entities.length > 0) {
         return {
           projectName: parsed.projectName || 'planta-principal',
-          lighting: parsed.lighting === 'sunset' ? 'sunset' : 'day',
+          lighting: normalizeLighting(parsed.lighting),
           entities: parsed.entities,
         };
       }
@@ -226,7 +242,7 @@ function loadDraft(): {
   }
   return {
     projectName: 'planta-principal',
-    lighting: 'day',
+    lighting: 'studio_neutral',
     entities: createSampleEntities(),
   };
 }
@@ -270,6 +286,8 @@ interface SceneStoreState {
   // Modals & UI state
   isSketchfabOpen: boolean;
   isGitModalOpen: boolean;
+  isInspectorVisible: boolean;
+  envIntensity: number;
   toastMessage: string | null;
   wallPreviewLength: number | null;
   polygonVertexCount: number;
@@ -295,6 +313,9 @@ interface SceneStoreState {
 
   setSketchfabOpen: (open: boolean) => void;
   setGitModalOpen: (open: boolean) => void;
+  setInspectorVisible: (visible: boolean) => void;
+  toggleInspector: () => void;
+  setEnvIntensity: (intensity: number) => void;
   showToast: (msg: string) => void;
 
   registerEngineCallbacks: (
@@ -355,6 +376,8 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
 
   isSketchfabOpen: false,
   isGitModalOpen: false,
+  isInspectorVisible: true,
+  envIntensity: 1.0,
   toastMessage: null,
   wallPreviewLength: null,
   polygonVertexCount: 0,
@@ -408,6 +431,9 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
 
   setSketchfabOpen: (open) => set({ isSketchfabOpen: open }),
   setGitModalOpen: (open) => set({ isGitModalOpen: open }),
+  setInspectorVisible: (visible) => set({ isInspectorVisible: visible }),
+  toggleInspector: () => set((s) => ({ isInspectorVisible: !s.isInspectorVisible })),
+  setEnvIntensity: (intensity) => set({ envIntensity: intensity }),
 
   showToast: (msg) => {
     set({ toastMessage: msg });
@@ -693,15 +719,16 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   },
 
   loadSceneDocument: (doc) => {
+    const normalizedLighting = normalizeLighting(doc.lighting);
     set({
       projectName: doc.projectName || 'planta-principal',
-      lighting: doc.lighting || 'day',
+      lighting: normalizedLighting,
       entities: doc.entities || [],
       selectedId: null,
       undoStack: [],
       redoStack: [],
     });
-    persistDraft(doc.projectName || 'planta-principal', doc.lighting || 'day', doc.entities || []);
+    persistDraft(doc.projectName || 'planta-principal', normalizedLighting, doc.entities || []);
   },
 
   resetToSampleScene: () => {
@@ -709,11 +736,11 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
     set({
       entities: sample,
       selectedId: null,
-      lighting: 'day',
+      lighting: 'studio_neutral',
       undoStack: [],
       redoStack: [],
     });
-    persistDraft(get().projectName, 'day', sample);
+    persistDraft(get().projectName, 'studio_neutral', sample);
   },
 
   getSceneDocument: () => {

@@ -3,6 +3,7 @@ import {
   Copy,
   Crosshair,
   Palette,
+  PanelRightClose,
   Sliders,
   Trash2,
 } from 'lucide-react';
@@ -26,17 +27,25 @@ export const InspectorPanel: React.FC = () => {
   const duplicateEntity = useSceneStore((s) => s.duplicateEntity);
   const deleteEntity = useSceneStore((s) => s.deleteEntity);
   const triggerFocusSelected = useSceneStore((s) => s.triggerFocusSelected);
+  const toggleInspector = useSceneStore((s) => s.toggleInspector);
 
   const entity = entities.find((e) => e.id === selectedId) || null;
 
   if (!entity) {
     return (
       <aside className="w-72 bg-[#161922] border-l border-[#2a3040] flex flex-col shrink-0 h-full">
-        <div className="px-3 py-2.5 border-b border-[#2a3040] flex items-center gap-1.5">
-          <Sliders className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">
+        <div className="px-3 py-2.5 border-b border-[#2a3040] flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-blue-400" />
             Inspector
           </span>
+          <button
+            onClick={toggleInspector}
+            title="Ocultar Inspector"
+            className="p-1 rounded hover:bg-[#2a3040] text-gray-400 hover:text-white"
+          >
+            <PanelRightClose className="w-3.5 h-3.5" />
+          </button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-xs text-gray-500">
           <Sliders className="w-8 h-8 mb-3 opacity-30" />
@@ -91,9 +100,18 @@ export const InspectorPanel: React.FC = () => {
           <Sliders className="w-3.5 h-3.5 text-blue-400" />
           Inspector
         </span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1d212d] text-blue-300 uppercase">
-          {entity.kind}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#1d212d] text-blue-300 uppercase">
+            {entity.kind}
+          </span>
+          <button
+            onClick={toggleInspector}
+            title="Ocultar Inspector"
+            className="p-1 rounded hover:bg-[#2a3040] text-gray-400 hover:text-white"
+          >
+            <PanelRightClose className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">

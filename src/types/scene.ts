@@ -53,7 +53,13 @@ export interface SceneEntityData {
 export type CameraMode = 'perspective' | 'top2d' | 'fps';
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 export type ToolMode = 'select' | 'draw_wall' | 'draw_floor' | 'draw_polygon_floor';
-export type LightingPreset = 'day' | 'sunset';
+export type LightingPreset =
+  | 'studio_neutral'
+  | 'studio_warm'
+  | 'daylight'
+  | 'sunset'
+  | 'industrial_loft'
+  | 'night_showroom';
 
 export interface SnapConfig {
   enabled: boolean;

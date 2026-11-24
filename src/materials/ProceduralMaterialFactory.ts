@@ -19,7 +19,6 @@ function clampByte(v: number): number {
   return Math.max(0, Math.min(255, Math.round(v)));
 }
 
-// Deterministic pseudo-random hash for procedural noise
 function hash2D(x: number, y: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
   return n - Math.floor(n);
@@ -31,8 +30,9 @@ function valueNoise(x: number, y: number, period: number): number {
   const xf = x - xi;
   const yf = y - yi;
 
-  const u = xf * xf * (3 - 2 * xf);
-  const v = yf * yf * (3 - 2 * yf);
+  // Smooth quintic interpolation for silky, noise-free transitions
+  const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10);
+  const v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
 
   const x0 = ((xi % period) + period) % period;
   const x1 = (x0 + 1) % period;
@@ -47,15 +47,15 @@ function valueNoise(x: number, y: number, period: number): number {
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 
-function fbmTileable(u: number, v: number, baseFreq: number, octaves = 4): number {
+function smoothFbm(u: number, v: number, baseFreq: number, octaves = 3): number {
   let sum = 0;
-  let amp = 0.5;
+  let amp = 0.55;
   let freq = baseFreq;
   let norm = 0;
   for (let i = 0; i < octaves; i++) {
     sum += amp * valueNoise(u * freq, v * freq, freq);
     norm += amp;
-    amp *= 0.5;
+    amp *= 0.45;
     freq *= 2;
   }
   return sum / norm;
@@ -103,15 +103,21 @@ export class ProceduralMaterialFactory {
 
     mat.diffuseMap = diffuseTex;
     mat.normalMap = normalTex;
-    mat.bumpiness = cfg.preset === 'wall' ? 0.45 : cfg.preset === 'concrete' ? 0.7 : 0.65;
+    // Smooth, subtle architectural normal relief (no harsh grain)
+    mat.bumpiness =
+      cfg.preset === 'wall'
+        ? 0.08
+        : cfg.preset === 'concrete'
+        ? 0.14
+        : cfg.preset === 'wood'
+        ? 0.16
+        : 0.22;
 
-    // PlayCanvas StandardMaterial uses glossMap (higher = glossier) or useMetalness + gloss
-    // We invert roughness into gloss in roughnessCanvas so roughness directly controls appearance
     mat.glossMap = glossTex;
     mat.glossMapChannel = 'r';
     mat.gloss = 1.0;
     mat.useMetalness = true;
-    mat.metalness = cfg.preset === 'ceramic' ? 0.04 : 0.0;
+    mat.metalness = cfg.preset === 'ceramic' ? 0.03 : 0.0;
 
     const tiling = new pc.Vec2(Math.max(0.05, cfg.tilingU), Math.max(0.05, cfg.tilingV));
     mat.diffuseMapTiling = tiling;
@@ -158,7 +164,7 @@ export class ProceduralMaterialFactory {
 
     if (cfg.preset === 'ceramic') {
       const tiles = Math.max(1, Math.round(cfg.tileSize ?? 2));
-      const groutWidth = Math.max(0.01, Math.min(0.18, cfg.groutWidth ?? 0.04));
+      const groutWidth = Math.max(0.01, Math.min(0.16, cfg.groutWidth ?? 0.04));
       const [gR, gG, gB] = hexToRgb(cfg.groutColor || '#9aa0a8');
 
       for (let y = 0; y < size; y++) {
@@ -180,38 +186,35 @@ export class ProceduralMaterialFactory {
           const p = idx * 4;
 
           if (isGrout) {
-            const grain = (hash2D(x * 0.7, y * 0.7) - 0.5) * 18;
-            albedoImg.data[p] = clampByte(gR + grain);
-            albedoImg.data[p + 1] = clampByte(gG + grain);
-            albedoImg.data[p + 2] = clampByte(gB + grain);
+            albedoImg.data[p] = clampByte(gR);
+            albedoImg.data[p + 1] = clampByte(gG);
+            albedoImg.data[p + 2] = clampByte(gB);
             albedoImg.data[p + 3] = 255;
 
-            heightField[idx] = 0.15 + hash2D(x, y) * 0.08;
-            // Grout is matte (high roughness -> low gloss)
-            const glossByte = clampByte((1 - 0.92) * 255);
+            heightField[idx] = 0.25;
+            const glossByte = clampByte((1 - 0.88) * 255);
             roughImg.data[p] = glossByte;
             roughImg.data[p + 1] = glossByte;
             roughImg.data[p + 2] = glossByte;
             roughImg.data[p + 3] = 255;
           } else {
-            const tileTint = (hash2D(tileCol * 13, tileRow * 29) - 0.5) * 10;
-            const subtleMarble = (fbmTileable(u, v, 8, 3) - 0.5) * 14;
-            albedoImg.data[p] = clampByte(baseR + tileTint + subtleMarble);
-            albedoImg.data[p + 1] = clampByte(baseG + tileTint + subtleMarble);
-            albedoImg.data[p + 2] = clampByte(baseB + tileTint + subtleMarble);
+            const tileTint = (hash2D(tileCol * 13, tileRow * 29) - 0.5) * 5;
+            const softCloud = (smoothFbm(u, v, 4, 2) - 0.5) * 6;
+            albedoImg.data[p] = clampByte(baseR + tileTint + softCloud);
+            albedoImg.data[p + 1] = clampByte(baseG + tileTint + softCloud);
+            albedoImg.data[p + 2] = clampByte(baseB + tileTint + softCloud);
             albedoImg.data[p + 3] = 255;
 
-            // Slight bevel near grout
             const edgeDist = Math.min(
               fx - groutWidth,
               1 - groutWidth - fx,
               fy - groutWidth,
               1 - groutWidth - fy
             );
-            const bevel = Math.min(1, edgeDist / 0.04);
-            heightField[idx] = 0.65 + 0.35 * bevel + subtleMarble * 0.002;
+            const bevel = Math.min(1, edgeDist / 0.035);
+            heightField[idx] = 0.72 + 0.28 * bevel;
 
-            const localRough = Math.max(0.05, Math.min(1, cfg.roughness + subtleMarble * 0.004));
+            const localRough = Math.max(0.06, Math.min(1, cfg.roughness + softCloud * 0.002));
             const glossByte = clampByte((1 - localRough) * 255);
             roughImg.data[p] = glossByte;
             roughImg.data[p + 1] = glossByte;
@@ -234,40 +237,40 @@ export class ProceduralMaterialFactory {
         for (let x = 0; x < size; x++) {
           const u = x / size;
           const shiftedU = (u + rowOffset) % 1;
-          const seamX = shiftedU < 0.008 || shiftedU > 0.992;
-          const seamY = py < 0.025 || py > 0.975;
+          const seamX = shiftedU < 0.006 || shiftedU > 0.994;
+          const seamY = py < 0.018 || py > 0.982;
 
           const idx = y * size + x;
           const p = idx * 4;
 
-          // Longitudinal wood grain waves
-          const warp = fbmTileable(u * 1.5, v * 6, 4, 3) * 0.25;
-          const grainWave = Math.sin((py * 18 + warp * 14 + plankRow * 2.1) * Math.PI);
-          const fineGrain = (fbmTileable(u * 2, v * 16, 8, 2) - 0.5) * 18;
-          const plankTint = (hash2D(plankRow * 11, Math.floor(u + rowOffset)) - 0.5) * 48 * variation;
+          // Silky longitudinal wood grain
+          const warp = smoothFbm(u, v * 3, 4, 2) * 0.22;
+          const grainWave = Math.sin((py * 12 + warp * 10 + plankRow * 2.1) * Math.PI);
+          const plankTint =
+            (hash2D(plankRow * 11, Math.floor(u + rowOffset)) - 0.5) * 28 * variation;
 
           if (seamX || seamY) {
-            albedoImg.data[p] = clampByte(baseR * 0.42);
-            albedoImg.data[p + 1] = clampByte(baseG * 0.42);
-            albedoImg.data[p + 2] = clampByte(baseB * 0.42);
+            albedoImg.data[p] = clampByte(baseR * 0.62);
+            albedoImg.data[p + 1] = clampByte(baseG * 0.62);
+            albedoImg.data[p + 2] = clampByte(baseB * 0.62);
             albedoImg.data[p + 3] = 255;
-            heightField[idx] = 0.1;
+            heightField[idx] = 0.25;
 
-            const glossByte = clampByte((1 - 0.9) * 255);
+            const glossByte = clampByte((1 - 0.85) * 255);
             roughImg.data[p] = glossByte;
             roughImg.data[p + 1] = glossByte;
             roughImg.data[p + 2] = glossByte;
             roughImg.data[p + 3] = 255;
           } else {
-            const delta = grainWave * 16 + fineGrain + plankTint;
+            const delta = grainWave * 8 + plankTint;
             albedoImg.data[p] = clampByte(baseR + delta);
-            albedoImg.data[p + 1] = clampByte(baseG + delta * 0.85);
-            albedoImg.data[p + 2] = clampByte(baseB + delta * 0.65);
+            albedoImg.data[p + 1] = clampByte(baseG + delta * 0.88);
+            albedoImg.data[p + 2] = clampByte(baseB + delta * 0.72);
             albedoImg.data[p + 3] = 255;
 
-            heightField[idx] = 0.6 + grainWave * 0.12 + fineGrain * 0.005;
+            heightField[idx] = 0.65 + grainWave * 0.06;
 
-            const localRough = Math.max(0.1, Math.min(1, cfg.roughness + grainWave * 0.07));
+            const localRough = Math.max(0.12, Math.min(1, cfg.roughness + grainWave * 0.03));
             const glossByte = clampByte((1 - localRough) * 255);
             roughImg.data[p] = glossByte;
             roughImg.data[p + 1] = glossByte;
@@ -277,6 +280,7 @@ export class ProceduralMaterialFactory {
         }
       }
     } else if (cfg.preset === 'concrete') {
+      // Smooth architectural concrete (cimento queimado suave)
       for (let y = 0; y < size; y++) {
         const v = y / size;
         for (let x = 0; x < size; x++) {
@@ -284,20 +288,18 @@ export class ProceduralMaterialFactory {
           const idx = y * size + x;
           const p = idx * 4;
 
-          const macro = fbmTileable(u, v, 6, 4);
-          const micro = fbmTileable(u, v, 24, 3);
-          const poreNoise = hash2D(x * 1.3, y * 1.7);
-          const isPore = poreNoise > 0.985;
+          const macro = smoothFbm(u, v, 4, 3);
+          const subtle = smoothFbm(u, v, 10, 2);
+          const shade = (macro - 0.5) * 18 + (subtle - 0.5) * 7;
 
-          const shade = (macro - 0.5) * 44 + (micro - 0.5) * 26 - (isPore ? 32 : 0);
           albedoImg.data[p] = clampByte(baseR + shade);
           albedoImg.data[p + 1] = clampByte(baseG + shade);
           albedoImg.data[p + 2] = clampByte(baseB + shade);
           albedoImg.data[p + 3] = 255;
 
-          heightField[idx] = isPore ? 0.15 : 0.5 + (macro - 0.5) * 0.35 + (micro - 0.5) * 0.25;
+          heightField[idx] = 0.5 + (macro - 0.5) * 0.14 + (subtle - 0.5) * 0.06;
 
-          const localRough = Math.max(0.2, Math.min(1, cfg.roughness + (micro - 0.5) * 0.12));
+          const localRough = Math.max(0.2, Math.min(1, cfg.roughness + (macro - 0.5) * 0.06));
           const glossByte = clampByte((1 - localRough) * 255);
           roughImg.data[p] = glossByte;
           roughImg.data[p + 1] = glossByte;
@@ -306,7 +308,7 @@ export class ProceduralMaterialFactory {
         }
       }
     } else {
-      // 'wall' (plaster / masonry micro-grain)
+      // Smooth matte painted wall / plaster (textura lisa e suave)
       for (let y = 0; y < size; y++) {
         const v = y / size;
         for (let x = 0; x < size; x++) {
@@ -314,18 +316,15 @@ export class ProceduralMaterialFactory {
           const idx = y * size + x;
           const p = idx * 4;
 
-          const plaster = fbmTileable(u, v, 10, 3);
-          const grain = (hash2D(x, y) - 0.5) * 9;
-          const delta = (plaster - 0.5) * 14 + grain;
-
-          albedoImg.data[p] = clampByte(baseR + delta);
-          albedoImg.data[p + 1] = clampByte(baseG + delta);
-          albedoImg.data[p + 2] = clampByte(baseB + delta);
+          const softCloud = (smoothFbm(u, v, 4, 2) - 0.5) * 5;
+          albedoImg.data[p] = clampByte(baseR + softCloud);
+          albedoImg.data[p + 1] = clampByte(baseG + softCloud);
+          albedoImg.data[p + 2] = clampByte(baseB + softCloud);
           albedoImg.data[p + 3] = 255;
 
-          heightField[idx] = 0.5 + (plaster - 0.5) * 0.25 + grain * 0.015;
+          heightField[idx] = 0.5 + softCloud * 0.015;
 
-          const localRough = Math.max(0.15, Math.min(1, cfg.roughness + (plaster - 0.5) * 0.06));
+          const localRough = Math.max(0.15, Math.min(1, cfg.roughness));
           const glossByte = clampByte((1 - localRough) * 255);
           roughImg.data[p] = glossByte;
           roughImg.data[p + 1] = glossByte;
@@ -338,13 +337,13 @@ export class ProceduralMaterialFactory {
     albedoCtx.putImageData(albedoImg, 0, 0);
     roughCtx.putImageData(roughImg, 0, 0);
 
-    // Build tangent-space Normal Map from heightField via Sobel filter
+    // Build gentle tangent-space Normal Map from heightField
     const normalCanvas = document.createElement('canvas');
     normalCanvas.width = size;
     normalCanvas.height = size;
     const normalCtx = normalCanvas.getContext('2d')!;
     const normalImg = normalCtx.createImageData(size, size);
-    const strength = cfg.preset === 'ceramic' ? 2.8 : cfg.preset === 'concrete' ? 2.2 : 1.5;
+    const strength = cfg.preset === 'ceramic' ? 1.4 : cfg.preset === 'wood' ? 0.9 : 0.6;
 
     for (let y = 0; y < size; y++) {
       const ym = (y - 1 + size) % size;

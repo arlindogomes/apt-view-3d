@@ -1,4 +1,5 @@
 import * as pc from 'playcanvas';
+import { getHdriPresetMeta, HdriEnvironmentFactory } from '../materials/HdriEnvironmentFactory';
 import { ProceduralMaterialFactory } from '../materials/ProceduralMaterialFactory';
 import { getGlbAsset, saveGlbAsset } from '../services/assetDb';
 import { createDefaultMaterial, useSceneStore } from '../store/sceneStore';
@@ -33,9 +34,11 @@ export class PlayCanvasEngine {
   private cameraEntity: pc.Entity;
   private cameraController: CameraController;
   private materialFactory: ProceduralMaterialFactory;
+  private hdriFactory: HdriEnvironmentFactory;
 
   private sunLight: pc.Entity;
   private fillLight: pc.Entity;
+  private rimLight: pc.Entity;
   private sceneRoot: pc.Entity;
 
   private gizmoLayer: pc.Layer;
@@ -69,8 +72,8 @@ export class PlayCanvasEngine {
   // Grid line buffers (precomputed for performance)
   private majorGridPositions: pc.Vec3[] = [];
   private minorGridPositions: pc.Vec3[] = [];
-  private majorGridColor = new pc.Color(0.32, 0.37, 0.48, 0.85);
-  private minorGridColor = new pc.Color(0.19, 0.22, 0.29, 0.55);
+  private majorGridColor = new pc.Color(0.26, 0.29, 0.34, 0.65);
+  private minorGridColor = new pc.Color(0.32, 0.35, 0.4, 0.35);
 
   private resizeObserver: ResizeObserver;
   private unsubscribeStore: () => void;
@@ -82,7 +85,7 @@ export class PlayCanvasEngine {
     this.app = new pc.Application(canvas, {
       graphicsDeviceOptions: {
         antialias: true,
-        alpha: false,
+        alpha: true,
         preserveDrawingBuffer: true,
         powerPreference: 'high-performance',
       },
@@ -95,18 +98,21 @@ export class PlayCanvasEngine {
     this.resizeToContainer();
 
     this.materialFactory = new ProceduralMaterialFactory(this.app.graphicsDevice);
+    this.hdriFactory = new HdriEnvironmentFactory(this.app.graphicsDevice);
 
     // Scene root
     this.sceneRoot = new pc.Entity('SceneRoot');
     this.app.root.addChild(this.sceneRoot);
 
-    // Camera
+    // Camera (transparent clearColor so CSS neutral gray studio gradient shows through)
     this.cameraEntity = new pc.Entity('MainCamera');
     this.cameraEntity.addComponent('camera', {
-      clearColor: new pc.Color(0.08, 0.1, 0.14, 1),
+      clearColor: new pc.Color(0, 0, 0, 0),
       fov: 48,
       nearClip: 0.08,
       farClip: 250,
+      toneMapping: pc.TONEMAP_ACES,
+      gammaCorrection: pc.GAMMA_SRGB,
     });
     this.app.root.addChild(this.cameraEntity);
 
@@ -124,31 +130,45 @@ export class PlayCanvasEngine {
     };
     this.setupGizmos();
 
-    // Lighting
+    // Uniform Sketchfab-style studio 3-point lighting with soft shadows + AO feel
     this.sunLight = new pc.Entity('SunLight');
     this.sunLight.addComponent('light', {
       type: 'directional',
-      color: new pc.Color(1, 0.97, 0.92),
-      intensity: 1.35,
+      color: new pc.Color(1, 0.99, 0.98),
+      intensity: 0.82,
       castShadows: true,
-      shadowBias: 0.25,
-      normalOffsetBias: 0.04,
+      shadowBias: 0.2,
+      normalOffsetBias: 0.03,
       shadowResolution: 2048,
-      shadowDistance: 28,
-      shadowType: pc.SHADOW_PCF3,
+      shadowDistance: 26,
+      shadowType: pc.SHADOW_PCF5,
+      shadowIntensity: 0.42,
     });
-    this.sunLight.setEulerAngles(48, 35, 0);
+    this.sunLight.setEulerAngles(58, 32, 0);
     this.app.root.addChild(this.sunLight);
 
     this.fillLight = new pc.Entity('FillLight');
     this.fillLight.addComponent('light', {
       type: 'directional',
-      color: new pc.Color(0.55, 0.7, 0.95),
+      color: new pc.Color(0.85, 0.89, 0.95),
       intensity: 0.45,
       castShadows: false,
     });
-    this.fillLight.setEulerAngles(35, -140, 0);
+    this.fillLight.setEulerAngles(38, -135, 0);
     this.app.root.addChild(this.fillLight);
+
+    this.rimLight = new pc.Entity('RimLight');
+    this.rimLight.addComponent('light', {
+      type: 'directional',
+      color: new pc.Color(0.92, 0.94, 0.98),
+      intensity: 0.28,
+      castShadows: false,
+    });
+    this.rimLight.setEulerAngles(25, 165, 0);
+    this.app.root.addChild(this.rimLight);
+
+    // Subtle Ambient Occlusion grounding shadow plane under the floor
+    this.createGroundAmbientOcclusionPlane();
 
     // Camera controller
     this.cameraController = new CameraController(this.cameraEntity, canvas);
@@ -158,7 +178,7 @@ export class PlayCanvasEngine {
 
     // Store sync
     const initial = useSceneStore.getState();
-    this.applyLightingPreset(initial.lighting);
+    this.applyLightingPreset(initial.lighting, initial.envIntensity);
     this.syncEntitiesFromStore(initial.entities);
     this.setSelectedId(initial.selectedId);
     this.setGizmoMode(initial.gizmoMode);
@@ -183,8 +203,8 @@ export class PlayCanvasEngine {
       if (state.toolMode !== prev.toolMode) {
         this.setToolMode(state.toolMode);
       }
-      if (state.lighting !== prev.lighting) {
-        this.applyLightingPreset(state.lighting);
+      if (state.lighting !== prev.lighting || state.envIntensity !== prev.envIntensity) {
+        this.applyLightingPreset(state.lighting, state.envIntensity);
       }
       if (state.snap !== prev.snap) {
         this.snap = state.snap;
@@ -348,32 +368,94 @@ export class PlayCanvasEngine {
     }
   }
 
-  private applyLightingPreset(preset: LightingPreset): void {
-    const cam = this.cameraEntity.camera!;
-    if (preset === 'sunset') {
-      cam.clearColor = new pc.Color(0.16, 0.11, 0.14, 1);
-      this.app.scene.ambientLight = new pc.Color(0.32, 0.22, 0.2);
-      if (this.sunLight.light) {
-        this.sunLight.light.color = new pc.Color(1.0, 0.62, 0.35);
-        this.sunLight.light.intensity = 1.65;
-      }
-      this.sunLight.setEulerAngles(20, 62, 0);
-      if (this.fillLight.light) {
-        this.fillLight.light.color = new pc.Color(0.35, 0.42, 0.72);
-        this.fillLight.light.intensity = 0.5;
-      }
-    } else {
-      cam.clearColor = new pc.Color(0.09, 0.11, 0.16, 1);
-      this.app.scene.ambientLight = new pc.Color(0.36, 0.4, 0.48);
-      if (this.sunLight.light) {
-        this.sunLight.light.color = new pc.Color(1.0, 0.98, 0.94);
-        this.sunLight.light.intensity = 1.35;
-      }
-      this.sunLight.setEulerAngles(48, 35, 0);
-      if (this.fillLight.light) {
-        this.fillLight.light.color = new pc.Color(0.55, 0.72, 0.95);
-        this.fillLight.light.intensity = 0.48;
-      }
+  private createGroundAmbientOcclusionPlane(): void {
+    const size = 256;
+    const aoCanvas = document.createElement('canvas');
+    aoCanvas.width = size;
+    aoCanvas.height = size;
+    const ctx = aoCanvas.getContext('2d')!;
+    const grad = ctx.createRadialGradient(
+      size / 2,
+      size / 2,
+      size * 0.08,
+      size / 2,
+      size / 2,
+      size * 0.48
+    );
+    grad.addColorStop(0, 'rgba(15, 18, 24, 0.32)');
+    grad.addColorStop(0.55, 'rgba(15, 18, 24, 0.14)');
+    grad.addColorStop(1, 'rgba(15, 18, 24, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    const aoTex = new pc.Texture(this.app.graphicsDevice, {
+      width: size,
+      height: size,
+      format: pc.PIXELFORMAT_RGBA8,
+      minFilter: pc.FILTER_LINEAR,
+      magFilter: pc.FILTER_LINEAR,
+      addressU: pc.ADDRESS_CLAMP_TO_EDGE,
+      addressV: pc.ADDRESS_CLAMP_TO_EDGE,
+      mipmaps: false,
+      srgb: true,
+    });
+    aoTex.setSource(aoCanvas);
+
+    const aoMat = new pc.StandardMaterial();
+    aoMat.diffuse = new pc.Color(0, 0, 0);
+    aoMat.opacityMap = aoTex;
+    aoMat.opacityMapChannel = 'a';
+    aoMat.blendType = pc.BLEND_NORMAL;
+    aoMat.depthWrite = false;
+    aoMat.useLighting = false;
+    aoMat.update();
+
+    const aoPlane = new pc.Entity('GroundAO');
+    aoPlane.addComponent('render', {
+      type: 'plane',
+      castShadows: false,
+      receiveShadows: false,
+      material: aoMat,
+    });
+    aoPlane.setLocalPosition(0, -0.002, 0);
+    aoPlane.setLocalScale(15, 1, 13);
+    this.app.root.addChild(aoPlane);
+  }
+
+  private applyLightingPreset(preset: LightingPreset, envIntensity = 1.0): void {
+    const meta = getHdriPresetMeta(preset);
+    const atlas = this.hdriFactory.getEnvAtlas(preset);
+
+    this.app.scene.envAtlas = atlas;
+    this.app.scene.skyboxIntensity = envIntensity;
+    this.app.scene.ambientLight = new pc.Color(
+      meta.ambientColor[0] * envIntensity,
+      meta.ambientColor[1] * envIntensity,
+      meta.ambientColor[2] * envIntensity
+    );
+
+    if (this.sunLight.light) {
+      this.sunLight.light.color = new pc.Color(
+        meta.sunColor[0],
+        meta.sunColor[1],
+        meta.sunColor[2]
+      );
+      this.sunLight.light.intensity = meta.sunIntensity * envIntensity;
+      this.sunLight.light.shadowIntensity = meta.shadowIntensity;
+    }
+    this.sunLight.setEulerAngles(meta.sunAngles[0], meta.sunAngles[1], meta.sunAngles[2]);
+
+    if (this.fillLight.light) {
+      this.fillLight.light.color = new pc.Color(
+        meta.fillColor[0],
+        meta.fillColor[1],
+        meta.fillColor[2]
+      );
+      this.fillLight.light.intensity = meta.fillIntensity * envIntensity;
+    }
+
+    if (this.rimLight.light) {
+      this.rimLight.light.intensity = 0.28 * envIntensity;
     }
   }
 
@@ -1052,6 +1134,7 @@ export class PlayCanvasEngine {
     this.cameraController.dispose();
     Object.values(this.gizmos).forEach((g) => g.destroy());
     this.materialFactory.dispose();
+    this.hdriFactory.dispose();
     this.app.off('update', this.onUpdate);
     this.app.destroy();
   }
