@@ -654,22 +654,30 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   },
 
   addEntity: (entityInput) => {
+    const existingIds = new Set(get().entities.map((e) => e.id));
+    const safeId =
+      entityInput.id && !existingIds.has(entityInput.id)
+        ? entityInput.id
+        : generateId(entityInput.kind);
     const entity: SceneEntityData = {
       ...entityInput,
-      id: entityInput.id || generateId(entityInput.kind),
+      id: safeId,
     };
     const prevSelected = get().selectedId;
+    const prevSelectedIds = [...get().selectedIds];
     get().executeCommand({
       label: `Criar ${entity.name}`,
       execute: () =>
         set((s) => ({
           entities: [...s.entities, entity],
           selectedId: entity.id,
+          selectedIds: [entity.id],
         })),
       undo: () =>
         set((s) => ({
           entities: s.entities.filter((e) => e.id !== entity.id),
           selectedId: prevSelected,
+          selectedIds: prevSelectedIds,
         })),
     });
     return entity;
@@ -833,15 +841,19 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
     get().executeCommand({
       label: `Excluir ${target.name}`,
       execute: () =>
-        set((s) => ({
-          entities: s.entities.filter((e) => e.id !== id),
-          selectedId: s.selectedId === id ? null : s.selectedId,
-        })),
+        set((s) => {
+          const nextIds = s.selectedIds.filter((sid) => sid !== id);
+          return {
+            entities: s.entities.filter((e) => e.id !== id),
+            selectedIds: nextIds,
+            selectedId: s.selectedId === id ? (nextIds[nextIds.length - 1] ?? null) : s.selectedId,
+          };
+        }),
       undo: () =>
         set((s) => {
           const next = [...s.entities];
           next.splice(Math.min(index, next.length), 0, target);
-          return { entities: next, selectedId: target.id };
+          return { entities: next, selectedId: target.id, selectedIds: [target.id] };
         }),
     });
   },
@@ -849,10 +861,13 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   duplicateEntity: (id) => {
     const target = get().entities.find((e) => e.id === id);
     if (!target) return null;
+    const { id: _discardId, ...clonedWithoutId } = structuredClone(target);
     const clone: Omit<SceneEntityData, 'id'> = {
-      ...structuredClone(target),
+      ...clonedWithoutId,
       name: `${target.name} (Cópia)`,
       locked: false,
+      groupId: undefined,
+      groupName: undefined,
       position: [target.position[0] + 0.5, target.position[1], target.position[2] + 0.5],
     };
     return get().addEntity(clone);
