@@ -30,15 +30,14 @@ export interface SavedGitConfig {
   rememberToken?: boolean;
 }
 
-const DEFAULT_PRIVATE_OWNER = 'arlindogomes';
-const DEFAULT_PRIVATE_PROJECTS_REPO = 'apt-view-projetos';
-
 export function detectRepoFromGitHubPages(): { owner: string; repo: string } | null {
   try {
     const host = window.location.hostname;
     if (host.endsWith('.github.io')) {
       const owner = host.replace('.github.io', '');
-      return { owner, repo: DEFAULT_PRIVATE_PROJECTS_REPO };
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      const repo = segments[0] || `${owner}.github.io`;
+      return { owner, repo };
     }
   } catch {
     // ignore
@@ -62,14 +61,9 @@ export function loadSavedGitConfig(): SavedGitConfig {
         delete parsed.token;
         localStorage.setItem(GIT_CONFIG_STORAGE_KEY, JSON.stringify(parsed));
       }
-      // Migrate default public code repo pointer to the dedicated private projects repo
-      const resolvedRepo =
-        !parsed.repo || parsed.repo === 'apt-view-3d'
-          ? DEFAULT_PRIVATE_PROJECTS_REPO
-          : parsed.repo;
       return {
-        owner: parsed.owner || detected?.owner || DEFAULT_PRIVATE_OWNER,
-        repo: resolvedRepo,
+        owner: parsed.owner || detected?.owner || '',
+        repo: parsed.repo || detected?.repo || '',
         token: activeToken,
         projectName: parsed.projectName || 'planta-principal',
         rememberToken: Boolean(parsed.rememberToken),
@@ -79,8 +73,8 @@ export function loadSavedGitConfig(): SavedGitConfig {
     // ignore
   }
   return {
-    owner: detected?.owner || DEFAULT_PRIVATE_OWNER,
-    repo: detected?.repo || DEFAULT_PRIVATE_PROJECTS_REPO,
+    owner: detected?.owner || '',
+    repo: detected?.repo || '',
     token: '',
     projectName: 'planta-principal',
     rememberToken: false,
