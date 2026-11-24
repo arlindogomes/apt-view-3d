@@ -8,6 +8,7 @@ import {
   GitFork,
   GitPullRequest,
   Loader2,
+  Plus,
   RefreshCw,
   ShieldAlert,
   UploadCloud,
@@ -30,7 +31,11 @@ export const GitPanelModal: React.FC = () => {
   const [repo, setRepo] = useState(git.repo);
   const [token, setToken] = useState(git.token);
   const [projectName, setLocalProjectName] = useState(git.projectName);
-  const [customBranch, setCustomBranch] = useState('');
+
+  const [showCreateBranch, setShowCreateBranch] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [baseBranch, setBaseBranch] = useState('');
+
   const [commitMessage, setCommitMessage] = useState('Atualiza layout da planta baixa 3D');
   const [prTitle, setPrTitle] = useState('');
   const [prUrl, setPrUrl] = useState<string | null>(null);
@@ -40,6 +45,7 @@ export const GitPanelModal: React.FC = () => {
 
   const createService = () => new GitHubSceneService(owner, repo, token);
 
+  // Step 1: Connect and list existing branches (does NOT auto-create a branch)
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!owner.trim() || !repo.trim() || !token.trim()) {
@@ -54,8 +60,10 @@ export const GitPanelModal: React.FC = () => {
       setProjectName(projectName);
 
       const svc = createService();
-      const res = await svc.connectAndEnsureCollabBranch(customBranch);
-      const commits = await svc.getBranchCommits(res.activeBranch);
+      const res = await svc.connectRepository();
+      const today = new Date().toISOString().slice(0, 10);
+      setNewBranchName(`collab/${res.userLogin.toLowerCase()}-${today}`);
+      setBaseBranch(res.defaultBranch);
 
       updateGitState({
         connected: true,
@@ -66,22 +74,17 @@ export const GitPanelModal: React.FC = () => {
         userLogin: res.userLogin,
         userAvatar: res.userAvatar,
         defaultBranch: res.defaultBranch,
-        currentBranch: res.activeBranch,
+        currentBranch: '',
         isReadOnlyBranch: false,
         branches: res.branches,
-        commits,
-        statusMessage: `Conectado como @${res.userLogin}`,
+        commits: [],
+        statusMessage: `Conectado como @${res.userLogin} — selecione uma branch`,
         lastError: null,
       });
 
-      // Load scene from branch if it already exists
-      const remoteDoc = await svc.loadSceneFromBranch(res.activeBranch, projectName);
-      if (remoteDoc) {
-        loadSceneDocument(remoteDoc);
-        showToast(`Cena carregada da branch ${res.activeBranch}`);
-      } else {
-        showToast(`Branch exclusiva ${res.activeBranch} pronta para trabalho!`);
-      }
+      showToast(
+        `Conectado como @${res.userLogin}! Escolha uma branch existente ou crie uma nova.`
+      );
     } catch (err) {
       updateGitState({
         connected: false,
@@ -93,25 +96,22 @@ export const GitPanelModal: React.FC = () => {
     }
   };
 
-  const handleSwitchBranch = async (branchName: string) => {
-    if (!git.connected) return;
+  // Step 2A: Select an existing branch to work on
+  const handleSelectBranch = async (branchName: string) => {
+    if (!git.connected || !branchName) return;
     setBusy(true);
     updateGitState({ lastError: null });
     try {
       const svc = createService();
       const commits = await svc.getBranchCommits(branchName);
-      const isMainOrOther =
-        branchName === git.defaultBranch ||
-        branchName === 'main' ||
-        (branchName.startsWith('collab/') &&
-          !branchName.startsWith(`collab/${git.userLogin.toLowerCase()}-`));
+      const isProtectedMain = branchName === git.defaultBranch || branchName === 'main';
 
       updateGitState({
         currentBranch: branchName,
-        isReadOnlyBranch: isMainOrOther,
+        isReadOnlyBranch: isProtectedMain,
         commits,
-        statusMessage: isMainOrOther
-          ? `Inspecionando ${branchName} (somente leitura)`
+        statusMessage: isProtectedMain
+          ? `Inspecionando ${branchName} (protegida)`
           : `Trabalhando em ${branchName}`,
       });
 
@@ -120,38 +120,82 @@ export const GitPanelModal: React.FC = () => {
         loadSceneDocument(remoteDoc);
         showToast(`Planta da branch "${branchName}" carregada!`);
       } else {
-        showToast(`Branch "${branchName}" ainda não possui projects/${projectName}/scene.json.`);
+        showToast(`Branch "${branchName}" selecionada (pronta para primeiro commit).`);
       }
     } catch (err) {
       updateGitState({
-        lastError: err instanceof Error ? err.message : 'Erro ao trocar branch.',
+        lastError: err instanceof Error ? err.message : 'Erro ao carregar branch.',
       });
     } finally {
       setBusy(false);
     }
   };
 
-  const handleForkBranch = async () => {
+  // Step 2B: Explicitly create a new branch when the user chooses to
+  const handleCreateBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!git.connected) return;
-    const suggested = `collab/${git.userLogin.toLowerCase()}-fork-${Date.now().toString(36).slice(-4)}`;
-    const newName = window.prompt('Nome da nova branch a partir da branch atual:', suggested);
-    if (!newName?.trim()) return;
+    const cleanName = newBranchName.trim();
+    if (!cleanName) {
+      updateGitState({ lastError: 'Informe um nome válido para a nova branch.' });
+      return;
+    }
+    if (cleanName === git.defaultBranch || cleanName === 'main') {
+      updateGitState({ lastError: `Escolha um nome diferente da branch "${git.defaultBranch}".` });
+      return;
+    }
 
     setBusy(true);
     updateGitState({ lastError: null });
     try {
       const svc = createService();
-      await svc.createBranchFrom(newName.trim(), git.currentBranch);
+      const source = baseBranch || git.currentBranch || git.defaultBranch;
+      await svc.createBranchFrom(cleanName, source);
       const branches = await svc.listBranches();
-      const commits = await svc.getBranchCommits(newName.trim());
+      const commits = await svc.getBranchCommits(cleanName);
+
       updateGitState({
         branches,
         commits,
-        currentBranch: newName.trim(),
+        currentBranch: cleanName,
         isReadOnlyBranch: false,
-        statusMessage: `Fork criado: ${newName.trim()}`,
+        statusMessage: `Trabalhando em ${cleanName}`,
       });
-      showToast(`Nova branch "${newName.trim()}" criada com sucesso!`);
+      setShowCreateBranch(false);
+      showToast(`Branch "${cleanName}" criada a partir de "${source}" e ativada!`);
+    } catch (err) {
+      updateGitState({
+        lastError: err instanceof Error ? err.message : 'Erro ao criar nova branch.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleForkCurrentBranch = async () => {
+    if (!git.connected || !git.currentBranch) return;
+    const suggested = `collab/${git.userLogin.toLowerCase()}-fork-${Date.now().toString(36).slice(-4)}`;
+    const name = window.prompt(
+      `Nome da nova branch a partir de "${git.currentBranch}":`,
+      suggested
+    );
+    if (!name?.trim()) return;
+
+    setBusy(true);
+    updateGitState({ lastError: null });
+    try {
+      const svc = createService();
+      await svc.createBranchFrom(name.trim(), git.currentBranch);
+      const branches = await svc.listBranches();
+      const commits = await svc.getBranchCommits(name.trim());
+      updateGitState({
+        branches,
+        commits,
+        currentBranch: name.trim(),
+        isReadOnlyBranch: false,
+        statusMessage: `Fork criado: ${name.trim()}`,
+      });
+      showToast(`Nova branch "${name.trim()}" criada com sucesso!`);
     } catch (err) {
       updateGitState({
         lastError: err instanceof Error ? err.message : 'Erro ao criar fork de branch.',
@@ -162,7 +206,7 @@ export const GitPanelModal: React.FC = () => {
   };
 
   const handleCommitPush = async () => {
-    if (!git.connected) return;
+    if (!git.connected || !git.currentBranch) return;
     setBusy(true);
     updateGitState({ lastError: null });
     try {
@@ -190,7 +234,7 @@ export const GitPanelModal: React.FC = () => {
   };
 
   const handleOpenPr = async () => {
-    if (!git.connected || git.currentBranch === git.defaultBranch) return;
+    if (!git.connected || !git.currentBranch || git.currentBranch === git.defaultBranch) return;
     setBusy(true);
     updateGitState({ lastError: null });
     try {
@@ -240,13 +284,15 @@ export const GitPanelModal: React.FC = () => {
             </div>
           )}
 
-          {/* Connection Form */}
+          {/* Step 1: Repository Connection */}
           <form
             onSubmit={handleConnect}
             className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-3"
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-200">Repositório GitHub (REST API)</h3>
+              <h3 className="font-semibold text-gray-200">
+                1. Conectar ao Repositório GitHub
+              </h3>
               {git.connected && (
                 <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" />@{git.userLogin}
@@ -271,7 +317,7 @@ export const GitPanelModal: React.FC = () => {
                   type="text"
                   value={repo}
                   onChange={(e) => setRepo(e.target.value)}
-                  placeholder="apt-view"
+                  placeholder="apt-view-3d"
                   className="w-full bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -299,54 +345,140 @@ export const GitPanelModal: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-gray-400 block mb-1">
-                  Branch de sessão (opcional — padrão: collab/&lt;login&gt;-&lt;data&gt;)
-                </label>
-                <input
-                  type="text"
-                  value={customBranch}
-                  onChange={(e) => setCustomBranch(e.target.value)}
-                  placeholder="collab/minha-revisao"
-                  className="w-full bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
-                />
-              </div>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={busy}
                 className="px-4 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center gap-1.5 disabled:opacity-50"
               >
-                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                {git.connected ? 'Reconectar / Sincronizar' : 'Conectar & Criar Branch'}
+                {busy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+                {git.connected ? 'Atualizar Lista de Branches' : 'Conectar ao Repositório'}
               </button>
             </div>
           </form>
 
-          {/* Connected Workspace Controls */}
+          {/* Step 2: Choose an existing branch OR create a new one */}
           {git.connected && (
+            <div className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-200">
+                  2. Escolher Branch de Trabalho ({git.branches.length} disponíveis)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBranch((v) => !v)}
+                  className="px-2.5 py-1 rounded bg-[#1d212d] hover:bg-[#272d3d] border border-[#2a3040] text-cyan-300 flex items-center gap-1 font-medium"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {showCreateBranch ? 'Cancelar Nova Branch' : 'Criar Nova Branch'}
+                </button>
+              </div>
+
+              {/* Existing Branches List */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                {git.branches.map((b) => {
+                  const isSelected = b.name === git.currentBranch;
+                  const isDefault = b.name === git.defaultBranch || b.name === 'main';
+                  return (
+                    <button
+                      key={b.name}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => handleSelectBranch(b.name)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-md border text-left transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600/20 border-blue-500 text-white'
+                          : 'bg-[#161922] border-[#2a3040] text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 font-mono truncate">
+                        <GitBranch className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+                        <span className="truncate">{b.name}</span>
+                      </span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ml-2 ${
+                          isDefault
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : isSelected
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-[#1d212d] text-gray-400'
+                        }`}
+                      >
+                        {isDefault ? 'protegida' : isSelected ? 'ativa' : 'selecionar'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Optional Create New Branch Form */}
+              {showCreateBranch && (
+                <form
+                  onSubmit={handleCreateBranch}
+                  className="p-3 rounded-md bg-[#161922] border border-cyan-500/40 space-y-2.5"
+                >
+                  <div className="text-[11px] font-semibold text-cyan-300">
+                    Criar Nova Branch
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-gray-400 block mb-1">Nome da nova branch</label>
+                      <input
+                        type="text"
+                        value={newBranchName}
+                        onChange={(e) => setNewBranchName(e.target.value)}
+                        placeholder={`collab/${git.userLogin.toLowerCase()}-revisao`}
+                        className="w-full bg-[#0f1117] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 font-mono focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 block mb-1">Criar a partir de</label>
+                      <select
+                        value={baseBranch || git.defaultBranch}
+                        onChange={(e) => setBaseBranch(e.target.value)}
+                        className="w-full bg-[#0f1117] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 font-mono focus:outline-none focus:border-cyan-500"
+                      >
+                        {git.branches.map((b) => (
+                          <option key={b.name} value={b.name}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="px-3.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-medium flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Criar e Selecionar Branch
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Active Branch Actions (Commit, Fork, PR, History) */}
+          {git.connected && git.currentBranch && (
             <>
-              {/* Branch Selector & Isolation Guard */}
               <div className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-200">Branch Ativa:</span>
-                    <select
-                      value={git.currentBranch}
-                      onChange={(e) => handleSwitchBranch(e.target.value)}
-                      disabled={busy}
-                      className="bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1 text-gray-100 font-mono"
-                    >
-                      {git.branches.map((b) => (
-                        <option key={b.name} value={b.name}>
-                          {b.name} {b.name === git.defaultBranch ? '(protegida)' : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <span className="font-semibold text-gray-200">3. Salvar na Branch:</span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 font-mono">
+                      {git.currentBranch}
+                    </span>
                   </div>
-
                   <button
-                    onClick={handleForkBranch}
+                    type="button"
+                    onClick={handleForkCurrentBranch}
                     disabled={busy}
                     className="px-3 py-1 rounded bg-[#1d212d] hover:bg-[#272d3d] border border-[#2a3040] text-gray-200 flex items-center gap-1.5"
                   >
@@ -359,15 +491,14 @@ export const GitPanelModal: React.FC = () => {
                   <div className="p-2.5 rounded bg-amber-500/10 border border-amber-500/40 text-amber-200 flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
                     <span>
-                      Modo Inspeção ({git.currentBranch}): commits diretos nesta branch estão
-                      desabilitados para evitar sobreposição. Use &ldquo;Criar Fork desta
-                      Branch&rdquo; para editar sua própria cópia.
+                      Branch protegida ({git.currentBranch}): commits diretos estão bloqueados para
+                      evitar sobreposição. Escolha outra branch acima ou clique em &ldquo;Criar
+                      Nova Branch&rdquo;.
                     </span>
                   </div>
                 )}
 
-                {/* Commit & Push */}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="text"
                     value={commitMessage}
@@ -376,6 +507,7 @@ export const GitPanelModal: React.FC = () => {
                     className="flex-1 bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
                   />
                   <button
+                    type="button"
                     onClick={handleCommitPush}
                     disabled={busy || git.isReadOnlyBranch}
                     className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 disabled:opacity-40"
@@ -392,39 +524,42 @@ export const GitPanelModal: React.FC = () => {
               </div>
 
               {/* Pull Request Section */}
-              <div className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-2.5">
-                <h3 className="font-semibold text-gray-200 flex items-center gap-1.5">
-                  <GitPullRequest className="w-3.5 h-3.5 text-purple-400" />
-                  Abrir Pull Request para {git.defaultBranch}
-                </h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    value={prTitle}
-                    onChange={(e) => setPrTitle(e.target.value)}
-                    placeholder={`Planta 3D (${projectName}): ${git.currentBranch}`}
-                    className="flex-1 bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
-                  />
-                  <button
-                    onClick={handleOpenPr}
-                    disabled={busy || git.currentBranch === git.defaultBranch}
-                    className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-medium flex items-center gap-1.5 disabled:opacity-40"
-                  >
-                    <GitPullRequest className="w-3.5 h-3.5" />
-                    Criar Pull Request
-                  </button>
+              {!git.isReadOnlyBranch && (
+                <div className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-2.5">
+                  <h3 className="font-semibold text-gray-200 flex items-center gap-1.5">
+                    <GitPullRequest className="w-3.5 h-3.5 text-purple-400" />
+                    Abrir Pull Request para {git.defaultBranch}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="text"
+                      value={prTitle}
+                      onChange={(e) => setPrTitle(e.target.value)}
+                      placeholder={`Planta 3D (${projectName}): ${git.currentBranch}`}
+                      className="flex-1 bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleOpenPr}
+                      disabled={busy}
+                      className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-medium flex items-center gap-1.5 disabled:opacity-40"
+                    >
+                      <GitPullRequest className="w-3.5 h-3.5" />
+                      Criar Pull Request
+                    </button>
+                  </div>
+                  {prUrl && (
+                    <a
+                      href={prUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-purple-300 hover:underline"
+                    >
+                      Pull Request aberto no GitHub <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
-                {prUrl && (
-                  <a
-                    href={prUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-purple-300 hover:underline"
-                  >
-                    Pull Request aberto no GitHub <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
+              )}
 
               {/* Commit History */}
               <div className="p-3.5 rounded-lg bg-[#0f1117] border border-[#2a3040] space-y-2">

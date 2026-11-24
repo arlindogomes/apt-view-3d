@@ -45,6 +45,9 @@ export class PlayCanvasEngine {
   private gizmos: Record<GizmoMode, pc.TransformGizmo>;
   private activeGizmoMode: GizmoMode = 'translate';
   private isGizmoDragging = false;
+  private justFinishedGizmoDrag = false;
+  private attachedGizmoEntityId: string | null = null;
+  private attachedGizmoMode: GizmoMode | null = null;
   private transformStartSnapshot: {
     id: string;
     position: Vec3;
@@ -279,6 +282,10 @@ export class PlayCanvasEngine {
 
       gizmo.on(pc.TransformGizmo.EVENT_TRANSFORMEND, () => {
         this.isGizmoDragging = false;
+        this.justFinishedGizmoDrag = true;
+        window.setTimeout(() => {
+          this.justFinishedGizmoDrag = false;
+        }, 120);
         this.cameraController.setSuppressed(false);
         if (this.transformStartSnapshot) {
           const rec = this.records.get(this.transformStartSnapshot.id);
@@ -739,14 +746,41 @@ export class PlayCanvasEngine {
 
   private detachAllGizmos(): void {
     Object.values(this.gizmos).forEach((g) => g.detach());
+    this.attachedGizmoEntityId = null;
+    this.attachedGizmoMode = null;
   }
 
   private refreshGizmoAttachment(): void {
-    this.detachAllGizmos();
-    if (this.toolMode !== 'select' || !this.selectedId) return;
+    // CRITICAL: Never detach/re-attach gizmos while user is actively dragging!
+    if (this.isGizmoDragging) return;
+
+    if (this.toolMode !== 'select' || !this.selectedId) {
+      if (this.attachedGizmoEntityId !== null) {
+        this.detachAllGizmos();
+      }
+      return;
+    }
+
     const rec = this.records.get(this.selectedId);
-    if (!rec || !rec.data.visible || rec.data.locked) return;
+    if (!rec || !rec.data.visible || rec.data.locked) {
+      if (this.attachedGizmoEntityId !== null) {
+        this.detachAllGizmos();
+      }
+      return;
+    }
+
+    // Avoid redundant detach/attach if already attached to the same entity in the same mode
+    if (
+      this.attachedGizmoEntityId === this.selectedId &&
+      this.attachedGizmoMode === this.activeGizmoMode
+    ) {
+      return;
+    }
+
+    this.detachAllGizmos();
     this.gizmos[this.activeGizmoMode].attach([rec.entity]);
+    this.attachedGizmoEntityId = this.selectedId;
+    this.attachedGizmoMode = this.activeGizmoMode;
   }
 
   public focusOnSelected(): void {
@@ -852,7 +886,10 @@ export class PlayCanvasEngine {
       this.cameraController.setSuppressed(false);
       return;
     }
-    if (e.button !== 0 || this.isGizmoDragging || !this.pointerDownPos) return;
+    if (e.button !== 0 || this.isGizmoDragging || this.justFinishedGizmoDrag || !this.pointerDownPos) {
+      this.pointerDownPos = null;
+      return;
+    }
     const moved = Math.hypot(
       e.clientX - this.pointerDownPos.x,
       e.clientY - this.pointerDownPos.y

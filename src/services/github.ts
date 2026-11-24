@@ -98,6 +98,28 @@ export class GitHubSceneService {
     this.octokit = new Octokit({ auth: token.trim() });
   }
 
+  async connectRepository(): Promise<{
+    userLogin: string;
+    userAvatar: string;
+    defaultBranch: string;
+    branches: GitBranchInfo[];
+  }> {
+    const [{ data: user }, { data: repoData }] = await Promise.all([
+      this.octokit.users.getAuthenticated(),
+      this.octokit.repos.get({ owner: this.owner, repo: this.repo }),
+    ]);
+
+    const defaultBranch = repoData.default_branch || 'main';
+    const branches = await this.listBranches();
+
+    return {
+      userLogin: user.login,
+      userAvatar: user.avatar_url,
+      defaultBranch,
+      branches,
+    };
+  }
+
   async connectAndEnsureCollabBranch(customBranch?: string): Promise<{
     userLogin: string;
     userAvatar: string;
