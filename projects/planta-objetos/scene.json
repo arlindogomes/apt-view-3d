@@ -1,0 +1,3540 @@
+{
+  "version": 1,
+  "projectName": "planta-objetos",
+  "lighting": "daylight",
+  "entities": [
+    {
+      "name": "Piso 1",
+      "category": "structure",
+      "kind": "floor",
+      "tags": [
+        "piso",
+        "laje"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -0.125,
+        0.05,
+        -0.125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        8.75,
+        0.1,
+        9.75
+      ],
+      "material": {
+        "preset": "ceramic",
+        "color": "#e8e4dc",
+        "roughness": 0.25,
+        "tilingU": 4.38,
+        "tilingV": 4.88,
+        "groutColor": "#6f7b8b",
+        "tileSize": 5,
+        "groutWidth": 0.03
+      },
+      "id": "floor-mwu3ma4t-9dyl"
+    },
+    {
+      "name": "apt3d_2 — Box015",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        3.2016,
+        1.5,
+        2.5125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.6,
+        2.8,
+        0.53
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#d53054",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 3,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          3.2016,
+          1.4,
+          2.5125
+        ]
+      },
+      "id": "glb-mwu3np4t-8g00"
+    },
+    {
+      "name": "apt3d_2 — Line001",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        0,
+        1.6,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        8.392,
+        3,
+        9.302
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#c8c9e5",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 0,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "id": "glb-mwu3np4t-cwdp"
+    },
+    {
+      "name": "apt3d_2 — Box011",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        3.2016,
+        1.5,
+        -1.2926
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.6,
+        2.8,
+        0.53
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#d93258",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 2,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          3.2016,
+          1.4,
+          -1.2926
+        ]
+      },
+      "id": "glb-mwu3np4t-i1c1"
+    },
+    {
+      "name": "apt3d_2 — Box018",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -0.1441,
+        0.1333,
+        2.3782
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.6,
+        0.067,
+        1.2
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#d93258",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 4,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          -0.1441,
+          0.0333,
+          2.3782
+        ]
+      },
+      "id": "glb-mwu3np4t-mvg0"
+    },
+    {
+      "name": "apt3d_2 — Box010",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -0.6714,
+        1.5,
+        -1.8441
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.53,
+        2.8,
+        1.6
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#df304a",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 1,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          -0.6714,
+          1.4,
+          -1.8441
+        ]
+      },
+      "id": "glb-mwu3np4t-zyc6"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.005",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -10.4945,
+        0.6167,
+        -0.858
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.55,
+        1.033,
+        0.519
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 40,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.2555,
+          0.5167,
+          0.642
+        ]
+      },
+      "id": "glb-mwu3qova-0hrg"
+    },
+    {
+      "name": "TinyLivingPack — TV ScreenOFF 2",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -1.2815,
+        1.6807,
+        -2.3409
+      ],
+      "rotation": [
+        0,
+        -90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.747,
+        0.42,
+        0.02
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 9,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          4.0555,
+          1.5807,
+          -0.7539
+        ]
+      },
+      "groupId": "grp-mwu3tt31-ju9",
+      "groupName": "Grupo 2",
+      "id": "glb-mwu3qova-0j4o"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.019",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4925,
+        2.4212,
+        -1.1129
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.204,
+        0.842,
+        0.17
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 26,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7425,
+          2.3212,
+          0.3871
+        ]
+      },
+      "id": "glb-mwu3qova-2wjq"
+    },
+    {
+      "name": "TinyLivingPack — Elemento #26",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4467,
+        2.3347,
+        -2.375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.02,
+        0.727,
+        0.495
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 25,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.6967,
+          2.2347,
+          -0.875
+        ]
+      },
+      "id": "glb-mwu3qova-3975"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.067 (Cópia) (Cópia)",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -0.6754,
+        0.6002,
+        -3.5114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.8,
+        1,
+        1.44
+      ],
+      "baseSize": [
+        0.812,
+        1,
+        0.846
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 36,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7254,
+          0.5002,
+          1.9886
+        ]
+      },
+      "id": "glb-mwu3qova-3u0j"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.046",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.3389,
+        1.0707,
+        0.4869
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.378,
+        0.341,
+        0.472
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 20,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.5889,
+          0.9707,
+          1.9869
+        ]
+      },
+      "id": "glb-mwu3qova-4m4g"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.057",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -8.5945,
+        0.785,
+        -2.7912
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.65,
+        1.37,
+        0.679
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 31,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.1555,
+          0.685,
+          -1.2912
+        ]
+      },
+      "id": "glb-mwu3qova-5rti"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.002",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.5613,
+        1.925,
+        -0.5114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.066,
+        0.844,
+        0.844
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 38,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.8113,
+          1.825,
+          0.9886
+        ]
+      },
+      "id": "glb-mwu3qova-6xbe"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.007",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -9.4945,
+        0.5943,
+        -0.8219
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.623,
+        0.989,
+        0.661
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 41,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.2555,
+          0.4943,
+          0.6781
+        ]
+      },
+      "id": "glb-mwu3qova-726s"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.061",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -1.7945,
+        1.0798,
+        0.9886
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.35,
+        1.35,
+        1.35
+      ],
+      "baseSize": [
+        0.85,
+        0.04,
+        0.85
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 34,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.4445,
+          0.9798,
+          0.9886
+        ]
+      },
+      "groupId": "grp-mwu3xhq1-o80",
+      "groupName": "Grupo 3",
+      "id": "glb-mwu3qova-7o6z"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.043",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4945,
+        1.0264,
+        -3.412
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.73,
+        1.853,
+        0.731
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 19,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7445,
+          0.9264,
+          -1.912
+        ]
+      },
+      "id": "glb-mwu3qova-7quj"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.014",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        3.0205,
+        0.4933,
+        0.7886
+      ],
+      "rotation": [
+        0,
+        -90,
+        0
+      ],
+      "scale": [
+        1.1,
+        1,
+        1.84
+      ],
+      "baseSize": [
+        0.48,
+        0.787,
+        0.784
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 43,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -0.8295,
+          0.3933,
+          0.7886
+        ]
+      },
+      "id": "glb-mwu3qova-cp14"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.045",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.3234,
+        1.0303,
+        0.4718
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.272,
+        0.204,
+        0.345
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 21,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.5734,
+          0.9303,
+          1.9718
+        ]
+      },
+      "id": "glb-mwu3qova-ealu"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.034",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        1.1055,
+        0.6567,
+        -3.0762
+      ],
+      "rotation": [
+        180,
+        0,
+        180
+      ],
+      "scale": [
+        0.78,
+        0.6,
+        0.66
+      ],
+      "baseSize": [
+        0.85,
+        1.113,
+        2.425
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 12,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -1.7445,
+          0.5567,
+          1.4238
+        ]
+      },
+      "id": "glb-mwu3qova-evjy"
+    },
+    {
+      "name": "TinyLivingPack — TV ScreenOFF",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -7.4993,
+        1.7792,
+        -3.6435
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.966,
+        0.543,
+        0.02
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 7,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          3.2507,
+          1.6792,
+          -2.1435
+        ]
+      },
+      "id": "glb-mwu3qova-fwlx"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.055",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4878,
+        2.0291,
+        0.4886
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.413,
+        0.995,
+        0.851
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 29,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7378,
+          1.9291,
+          1.9886
+        ]
+      },
+      "id": "glb-mwu3qova-h6k8"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.062",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -1.7945,
+        0.5799,
+        0.9886
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.6,
+        0.96,
+        0.6
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 33,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.4445,
+          0.4799,
+          0.9886
+        ]
+      },
+      "groupId": "grp-mwu3xhq1-o80",
+      "groupName": "Grupo 3",
+      "id": "glb-mwu3qova-h8s3"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.064",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -8.592,
+        0.3645,
+        -0.2176
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.594,
+        0.529,
+        0.604
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 35,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.158,
+          0.2645,
+          1.2824
+        ]
+      },
+      "id": "glb-mwu3qova-hie6"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.016",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -7.9945,
+        0.5462,
+        -2.831
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.385,
+        0.892,
+        0.744
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 44,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.7555,
+          0.4462,
+          -1.331
+        ]
+      },
+      "id": "glb-mwu3qova-hpqx"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.042",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -9.0896,
+        2.7047,
+        -1.7909
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.471,
+        0.791,
+        0.567
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 18,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.6604,
+          2.6047,
+          -0.2909
+        ]
+      },
+      "id": "glb-mwu3qova-j4bv"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.013",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        2.4555,
+        0.9559,
+        -3.5859
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "baseSize": [
+        1.762,
+        1.712,
+        2.521
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 1,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -1.3445,
+          0.8559,
+          -1.3359
+        ]
+      },
+      "groupId": "grp-mwu3s8jn-65e",
+      "groupName": "Grupo 1",
+      "id": "glb-mwu3qova-myve"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.051",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.3617,
+        0.8562,
+        -2.7114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.516,
+        1.512,
+        0.527
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 23,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.6117,
+          0.7562,
+          -1.2114
+        ]
+      },
+      "id": "glb-mwu3qova-nase"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.029",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -9.5945,
+        0.3484,
+        -0.1114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.731,
+        0.497,
+        0.731
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 10,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.1555,
+          0.2484,
+          1.3886
+        ]
+      },
+      "id": "glb-mwu3qova-oh9o"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.027",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -1.3075,
+        1.3078,
+        -2.3409
+      ],
+      "rotation": [
+        0,
+        -90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.841,
+        1.2,
+        0.367
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 8,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          4.0555,
+          1.2078,
+          -0.7279
+        ]
+      },
+      "groupId": "grp-mwu3tt31-ju9",
+      "groupName": "Grupo 2",
+      "id": "glb-mwu3qova-oy6o"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4814,
+        0.7776,
+        -1.9114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.675,
+        1.355,
+        0.85
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 37,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7314,
+          0.6776,
+          -0.4114
+        ]
+      },
+      "id": "glb-mwu3qova-qn2x"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.021",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -8.6945,
+        0.62,
+        -3.6176
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.748,
+        0.797,
+        0.033
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 46,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.0555,
+          0.52,
+          -2.1176
+        ]
+      },
+      "id": "glb-mwu3qova-qsmx"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.039",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4462,
+        2.3615,
+        -1.6114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.297,
+        1.035,
+        0.783
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 27,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.6962,
+          2.2615,
+          -0.1114
+        ]
+      },
+      "id": "glb-mwu3qova-ro8k"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.025",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -8.6945,
+        1.2984,
+        -3.8406
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.85,
+        2.397,
+        0.592
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 45,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.0555,
+          1.1984,
+          -2.3406
+        ]
+      },
+      "id": "glb-mwu3qova-toop"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.052",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4105,
+        2.4628,
+        -1.5699
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.368,
+        0.924,
+        0.593
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 28,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.6605,
+          2.3628,
+          -0.0699
+        ]
+      },
+      "id": "glb-mwu3qova-ubv2"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.054",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.5073,
+        2.0377,
+        0.4905
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.276,
+        0.714,
+        0.814
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 30,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7573,
+          1.9377,
+          1.9905
+        ]
+      },
+      "id": "glb-mwu3qova-uhkv"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.004",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -10.0945,
+        0.106,
+        -0.7114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        2.85,
+        0.02,
+        1.786
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 39,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          0.006,
+          0.7886
+        ]
+      },
+      "id": "glb-mwu3qova-v91h"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.009",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        2.4555,
+        0.5888,
+        -3.4777
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "baseSize": [
+        1.696,
+        0.459,
+        2.314
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 2,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -1.3445,
+          0.4888,
+          -1.2277
+        ]
+      },
+      "groupId": "grp-mwu3s8jn-65e",
+      "groupName": "Grupo 1",
+      "id": "glb-mwu3qova-vcvn"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.059",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -8.5945,
+        0.6142,
+        -1.5485
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.822,
+        1.028,
+        0.739
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 32,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          2.1555,
+          0.5142,
+          -0.0485
+        ]
+      },
+      "id": "glb-mwu3qova-vphk"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.048",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -10.4942,
+        0.9591,
+        -0.1114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.245,
+        0.56,
+        0.243
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 22,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.2558,
+          0.8591,
+          1.3886
+        ]
+      },
+      "id": "glb-mwu3qova-w8t9"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.017",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.4826,
+        2.3347,
+        -2.375
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.096,
+        0.752,
+        0.519
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 24,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.7326,
+          2.2347,
+          -0.875
+        ]
+      },
+      "id": "glb-mwu3qova-xhcz"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.010",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -10.4945,
+        0.3895,
+        -0.1114
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.639,
+        0.579,
+        0.639
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 42,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.2555,
+          0.2895,
+          1.3886
+        ]
+      },
+      "id": "glb-mwu3qova-xl3b"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.022",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -13.1837,
+        1.2559,
+        -0.5116
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.2,
+        0.312,
+        0.462
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 5,
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -2.4337,
+          1.1559,
+          0.9884
+        ]
+      },
+      "id": "glb-mwu3qova-ycis"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 14",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8125,
+        1.8717,
+        -1.8381
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.177,
+        0.084,
+        0.175
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          20
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -0.0727,
+          1.7717,
+          -1.9843
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-3u6a"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 13",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8574,
+        0.2265,
+        -1.7778
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.059,
+        0.253,
+        0.051
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          9
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -0.133,
+          0.1265,
+          -2.0292
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-4hhh"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 20",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.7987,
+        1.8717,
+        -3.2045
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.084,
+        0.084,
+        0.084
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          22
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.2937,
+          1.7717,
+          -1.9705
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-5d8e"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.5396,
+        0.3571,
+        -2.5663
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.663,
+        0.048,
+        0.75
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          5
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          0.2571,
+          -1.7114
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-5rkk"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 11",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.5188,
+        0.4597,
+        -1.7102
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.049,
+        0.259,
+        0.708
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          12
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -0.2006,
+          0.3597,
+          -1.6906
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-9ojg"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 12",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8574,
+        0.2265,
+        -3.3548
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.059,
+        0.253,
+        0.051
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          4
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.444,
+          0.1265,
+          -2.0292
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-d08z"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 10",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.5188,
+        0.4597,
+        -3.4224
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.049,
+        0.259,
+        0.708
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          11
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.5116,
+          0.3597,
+          -1.6906
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-drta"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 17",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.2218,
+        0.2165,
+        -3.3548
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.059,
+        0.233,
+        0.051
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          7
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.444,
+          0.1165,
+          -1.3936
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-hhhl"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 5",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8406,
+        0.6319,
+        -2.5663
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.648,
+        0.309,
+        0.157
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          14
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          0.5319,
+          -2.0124
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-i766"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 4",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8418,
+        1.914,
+        -2.5663
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.683,
+        0.253,
+        0.229
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          15,
+          16,
+          17
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          1.814,
+          -2.0136
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-jjrx"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 19",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8369,
+        1.8903,
+        -3.3119
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.101,
+        0.121,
+        0.101
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          21
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          1.4011,
+          1.7903,
+          -2.0087
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-mgke"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 6",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8585,
+        0.3078,
+        -2.5559
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.556,
+        0.09,
+        0.029
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          8
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6451,
+          0.2078,
+          -2.0303
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-ntjl"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 7",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.2207,
+        0.2978,
+        -2.5767
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.556,
+        0.07,
+        0.029
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          10
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6659,
+          0.1978,
+          -1.3925
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-p4be"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 18",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8038,
+        1.8817,
+        -2.1222
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.118,
+        0.104,
+        0.118
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          19
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.2114,
+          1.7817,
+          -1.9756
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-pu5u"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 16",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.2218,
+        0.2165,
+        -1.7778
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.059,
+        0.233,
+        0.051
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          6
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          -0.133,
+          0.1165,
+          -1.3936
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-q9vr"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 2",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.5188,
+        0.4636,
+        -2.5663
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.663,
+        0.165,
+        0.708
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          3
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          0.3636,
+          -1.6906
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-rjoh"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 15",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.8368,
+        1.9024,
+        -1.9995
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.145,
+        0.145,
+        0.145
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          18
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.0887,
+          1.8024,
+          -2.0086
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-sfto"
+    },
+    {
+      "name": "TinyLivingPack — DIFFUSE.011 3 — DIFFUSE.011 3",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        -3.7632,
+        0.7003,
+        -2.5663
+      ],
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.663,
+        0.49,
+        0.303
+      ],
+      "material": {
+        "preset": "original",
+        "color": "#ffffff",
+        "roughness": 0.5,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3qop3-i5m1",
+      "assetFileName": "sketchfab_e192841259554d1cabb08c7a8180be9f.glb",
+      "assetAuthor": "Vlad",
+      "assetLicense": "CC Attribution",
+      "glbPart": {
+        "primIndex": 4,
+        "islandIndices": [
+          13
+        ],
+        "normScale": 1,
+        "normOffset": [
+          3.6555,
+          0,
+          -1.2114
+        ],
+        "localCenter": [
+          0.6555,
+          0.6003,
+          -1.935
+        ]
+      },
+      "groupName": "TinyLivingPack — DIFFUSE.011 3",
+      "id": "glb-mwu3vtd8-wmeo"
+    }
+  ]
+}
