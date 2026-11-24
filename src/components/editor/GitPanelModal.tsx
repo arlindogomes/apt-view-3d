@@ -301,13 +301,27 @@ export const GitPanelModal: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-200">
-                1. Conectar ao Repositório GitHub
+                1. Conectar ao Repositório Privado de Projetos
               </h3>
               {git.connected && (
                 <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" />@{git.userLogin}
                 </span>
               )}
+            </div>
+
+            <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-200 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Repositório privado <strong className="font-mono">{owner || 'arlindogomes'}/{repo || 'apt-view-projetos'}</strong> pronto — suas branches, plantas e arquivos <code>.glb</code> ficam acessíveis apenas por você.
+              </span>
+              <a
+                href="https://github.com/settings/personal-access-tokens/new"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-300 hover:underline font-medium shrink-0"
+              >
+                Gerar Token (PAT) <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
