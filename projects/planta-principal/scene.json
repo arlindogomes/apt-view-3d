@@ -1,43 +1,8 @@
 {
   "version": 1,
   "projectName": "planta-principal",
-  "lighting": "day",
+  "lighting": "daylight",
   "entities": [
-    {
-      "name": "Bloco 1",
-      "category": "furniture",
-      "kind": "block",
-      "tags": [
-        "bloco",
-        "movel"
-      ],
-      "visible": true,
-      "locked": false,
-      "position": [
-        0,
-        0.55,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1.2,
-        0.9,
-        0.8
-      ],
-      "material": {
-        "preset": "wood",
-        "color": "#b5835a",
-        "roughness": 0.45,
-        "tilingU": 1,
-        "tilingV": 1,
-        "plankVariation": 0.35
-      },
-      "id": "block-mwtzpbj0-dnkj"
-    },
     {
       "name": "Piso 1",
       "category": "structure",
@@ -49,7 +14,7 @@
       "visible": true,
       "locked": false,
       "position": [
-        0,
+        -0.125,
         0.05,
         -0.125
       ],
@@ -59,35 +24,90 @@
         0
       ],
       "scale": [
-        9,
+        8.75,
         0.1,
-        10.25
+        9.75
       ],
       "material": {
-        "preset": "wall",
-        "color": "#f3f5f8",
-        "roughness": 0.85,
-        "tilingU": 4.5,
-        "tilingV": 5.13,
-        "groutColor": "#9aa0a8",
-        "tileSize": 2,
-        "groutWidth": 0.04
+        "preset": "ceramic",
+        "color": "#e8e4dc",
+        "roughness": 0.25,
+        "tilingU": 4.38,
+        "tilingV": 4.88,
+        "groutColor": "#6f7b8b",
+        "tileSize": 5,
+        "groutWidth": 0.03
       },
-      "id": "floor-mwtznl90-9s5y"
+      "id": "floor-mwu3ma4t-9dyl"
     },
     {
-      "name": "apt3d",
+      "name": "apt3d_2 — Box015",
       "category": "furniture",
       "kind": "glb",
       "tags": [
         "glb",
-        "importado"
+        "elemento-3d"
       ],
       "visible": true,
       "locked": false,
       "position": [
-        -0.5,
-        0.1,
+        3.2016,
+        1.5,
+        2.5125
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        1.6,
+        2.8,
+        0.53
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#d53054",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 3,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          3.2016,
+          1.4,
+          2.5125
+        ]
+      },
+      "id": "glb-mwu3np4t-8g00"
+    },
+    {
+      "name": "apt3d_2 — Line001",
+      "category": "furniture",
+      "kind": "glb",
+      "tags": [
+        "glb",
+        "elemento-3d"
+      ],
+      "visible": true,
+      "locked": false,
+      "position": [
+        0,
+        1.6,
         0
       ],
       "rotation": [
@@ -100,36 +120,50 @@
         1,
         1
       ],
-      "material": {
-        "preset": "original",
-        "color": "#ffffff",
-        "roughness": 0.5,
-        "tilingU": 1,
-        "tilingV": 1
-      },
-      "assetId": "glb-mwtzhuql-x3bi",
-      "assetFileName": "apt3d.glb",
-      "id": "glb-mwtzhus4-m9ua",
       "baseSize": [
         8.392,
         3,
         9.302
-      ]
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#c8c9e5",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 0,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "id": "glb-mwu3np4t-cwdp"
     },
     {
-      "name": "Poltrona Sheen (SheenChair)",
+      "name": "apt3d_2 — Box011",
       "category": "furniture",
       "kind": "glb",
       "tags": [
-        "khronos",
-        "3d"
+        "glb",
+        "elemento-3d"
       ],
       "visible": true,
       "locked": false,
       "position": [
-        -0.25,
-        0.1,
-        0
+        3.2016,
+        1.5,
+        -1.2926
       ],
       "rotation": [
         0,
@@ -141,36 +175,50 @@
         1,
         1
       ],
-      "material": {
-        "preset": "original",
-        "color": "#ffffff",
-        "roughness": 0.5,
-        "tilingU": 1,
-        "tilingV": 1
-      },
-      "assetId": "glb-mwtzlksb-9jvr",
-      "assetFileName": "poltrona_sheen__sheenchair_.glb",
-      "assetSourceUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/SheenChair/glTF-Binary/SheenChair.glb",
-      "id": "glb-mwtzlkt4-440a",
       "baseSize": [
-        0.827,
-        0.686,
-        0.57
-      ]
+        1.6,
+        2.8,
+        0.53
+      ],
+      "material": {
+        "preset": "wall",
+        "color": "#d93258",
+        "roughness": 0.85,
+        "tilingU": 1,
+        "tilingV": 1
+      },
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 2,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          3.2016,
+          1.4,
+          -1.2926
+        ]
+      },
+      "id": "glb-mwu3np4t-i1c1"
     },
     {
-      "name": "Ponto de Luz 1",
-      "category": "lighting",
-      "kind": "light",
+      "name": "apt3d_2 — Box018",
+      "category": "furniture",
+      "kind": "glb",
       "tags": [
-        "luz"
+        "glb",
+        "elemento-3d"
       ],
       "visible": true,
       "locked": false,
       "position": [
-        0,
-        2.5,
-        0
+        -0.1441,
+        0.1333,
+        2.3782
       ],
       "rotation": [
         0,
@@ -178,34 +226,54 @@
         0
       ],
       "scale": [
-        0.25,
-        0.25,
-        0.25
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.6,
+        0.067,
+        1.2
       ],
       "material": {
         "preset": "wall",
-        "color": "#f3f5f8",
+        "color": "#d93258",
         "roughness": 0.85,
         "tilingU": 1,
         "tilingV": 1
       },
-      "lightColor": "#fff2d6",
-      "lightIntensity": 1,
-      "id": "light-mwtzp2rc-jp6e"
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 4,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          -0.1441,
+          0.0333,
+          2.3782
+        ]
+      },
+      "id": "glb-mwu3np4t-mvg0"
     },
     {
-      "name": "Ponto de Luz 2",
-      "category": "lighting",
-      "kind": "light",
+      "name": "apt3d_2 — Box010",
+      "category": "furniture",
+      "kind": "glb",
       "tags": [
-        "luz"
+        "glb",
+        "elemento-3d"
       ],
       "visible": true,
       "locked": false,
       "position": [
-        0,
-        2.5,
-        0
+        -0.6714,
+        1.5,
+        -1.8441
       ],
       "rotation": [
         0,
@@ -213,125 +281,39 @@
         0
       ],
       "scale": [
-        0.25,
-        0.25,
-        0.25
+        1,
+        1,
+        1
+      ],
+      "baseSize": [
+        0.53,
+        2.8,
+        1.6
       ],
       "material": {
         "preset": "wall",
-        "color": "#f3f5f8",
+        "color": "#df304a",
         "roughness": 0.85,
         "tilingU": 1,
         "tilingV": 1
       },
-      "lightColor": "#fff2d6",
-      "lightIntensity": 1,
-      "id": "light-mwtzp4mc-27bk"
-    },
-    {
-      "name": "Ponto de Luz 3",
-      "category": "lighting",
-      "kind": "light",
-      "tags": [
-        "luz"
-      ],
-      "visible": true,
-      "locked": false,
-      "position": [
-        0,
-        2.5,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.25,
-        0.25,
-        0.25
-      ],
-      "material": {
-        "preset": "wall",
-        "color": "#f3f5f8",
-        "roughness": 0.85,
-        "tilingU": 1,
-        "tilingV": 1
+      "assetId": "glb-mwu3k0gl-w1ix",
+      "assetFileName": "apt3d_2.glb",
+      "glbPart": {
+        "primIndex": 1,
+        "normScale": 1,
+        "normOffset": [
+          -15.6274,
+          0,
+          -2.1301
+        ],
+        "localCenter": [
+          -0.6714,
+          1.4,
+          -1.8441
+        ]
       },
-      "lightColor": "#fff2d6",
-      "lightIntensity": 1,
-      "id": "light-mwtzp5mh-i35w"
-    },
-    {
-      "name": "Ponto de Luz 4",
-      "category": "lighting",
-      "kind": "light",
-      "tags": [
-        "luz"
-      ],
-      "visible": true,
-      "locked": false,
-      "position": [
-        0,
-        2.5,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.25,
-        0.25,
-        0.25
-      ],
-      "material": {
-        "preset": "wall",
-        "color": "#f3f5f8",
-        "roughness": 0.85,
-        "tilingU": 1,
-        "tilingV": 1
-      },
-      "lightColor": "#fff2d6",
-      "lightIntensity": 1,
-      "id": "light-mwtzp6pt-zgs6"
-    },
-    {
-      "name": "Ponto de Luz 5",
-      "category": "lighting",
-      "kind": "light",
-      "tags": [
-        "luz"
-      ],
-      "visible": true,
-      "locked": false,
-      "position": [
-        0,
-        2.5,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.25,
-        0.25,
-        0.25
-      ],
-      "material": {
-        "preset": "wall",
-        "color": "#f3f5f8",
-        "roughness": 0.85,
-        "tilingU": 1,
-        "tilingV": 1
-      },
-      "lightColor": "#fff2d6",
-      "lightIntensity": 1,
-      "id": "light-mwtzp76y-zbxp"
+      "id": "glb-mwu3np4t-zyc6"
     }
   ]
 }
