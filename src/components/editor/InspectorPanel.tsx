@@ -3,6 +3,8 @@ import {
   Boxes,
   Copy,
   Crosshair,
+  Link2,
+  Link2Off,
   Palette,
   PanelRightClose,
   Sliders,
@@ -32,6 +34,8 @@ export const InspectorPanel: React.FC = () => {
   const toggleInspector = useSceneStore((s) => s.toggleInspector);
   const groupTransformMode = useSceneStore((s) => s.groupTransformMode);
   const setGroupTransformMode = useSceneStore((s) => s.setGroupTransformMode);
+  const uniformScale = useSceneStore((s) => s.uniformScale);
+  const toggleUniformScale = useSceneStore((s) => s.toggleUniformScale);
   const splitGlbEntity = useSceneStore((s) => s.splitGlbEntity);
   const [splitting, setSplitting] = useState(false);
 
@@ -79,7 +83,18 @@ export const InspectorPanel: React.FC = () => {
       rotation: [...entity.rotation] as Vec3,
       scale: [...entity.scale] as Vec3,
     };
-    after[field][axisIdx] = field === 'scale' ? Math.max(0.02, val) : val;
+    if (field === 'scale' && uniformScale) {
+      const oldVal = Math.max(0.001, entity.scale[axisIdx]);
+      const newVal = Math.max(0.02, val);
+      const ratio = newVal / oldVal;
+      after.scale = [
+        Math.max(0.02, Number((entity.scale[0] * ratio).toFixed(4))),
+        Math.max(0.02, Number((entity.scale[1] * ratio).toFixed(4))),
+        Math.max(0.02, Number((entity.scale[2] * ratio).toFixed(4))),
+      ];
+    } else {
+      after[field][axisIdx] = field === 'scale' ? Math.max(0.02, val) : val;
+    }
     commitEntityTransform(entity.id, before, after);
   };
 
@@ -254,13 +269,34 @@ export const InspectorPanel: React.FC = () => {
 
           {(['position', 'rotation', 'scale'] as const).map((field) => (
             <div key={field}>
-              <label className="text-[11px] text-gray-400 block mb-1 capitalize">
-                {field === 'position'
-                  ? 'Posição (m)'
-                  : field === 'rotation'
-                  ? 'Rotação (°)'
-                  : 'Escala / Dimensão'}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] text-gray-400 capitalize">
+                  {field === 'position'
+                    ? 'Posição (m)'
+                    : field === 'rotation'
+                    ? 'Rotação (°)'
+                    : 'Escala / Dimensão'}
+                </label>
+                {field === 'scale' && (
+                  <label
+                    className="flex items-center gap-1.5 text-[10px] cursor-pointer select-none text-gray-300 hover:text-white"
+                    title="Quando ativado, altera X, Y e Z proporcionalmente (tanto no Inspector quanto no Gizmo R)"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={uniformScale}
+                      onChange={toggleUniformScale}
+                      className="accent-blue-500"
+                    />
+                    {uniformScale ? (
+                      <Link2 className="w-3 h-3 text-blue-400" />
+                    ) : (
+                      <Link2Off className="w-3 h-3 text-gray-500" />
+                    )}
+                    <span>Proporcional</span>
+                  </label>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {([0, 1, 2] as const).map((idx) => (
                   <div

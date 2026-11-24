@@ -30,6 +30,7 @@ export interface ParsedGlbAssetCache {
   defaultNormScale: number;
   defaultNormOffset: Vec3;
   modelMaxDim: number;
+  rawBoundsSize: Vec3;
 }
 
 export interface DecomposedGlbPartDescriptor {
@@ -375,27 +376,8 @@ export function parseGlbContainerPrimitives(
   const rawD = Math.max(0.001, globalMaxZ - globalMinZ);
   const maxDim = Math.max(rawW, rawH, rawD);
 
-  // Determine smart architectural normalization scale
-  const allNames = `${modelHintName} ${primitives.map((p) => `${p.nodeName} ${p.materialName}`).join(' ')}`;
-  const isArchitectural =
-    /\b(house|casa|home|building|predio|room|sala|quarto|kitchen|cozinha|apartment|apartamento|floorplan|planta|wall|parede|door|porta|window|janela|roof|telhado)\b/i.test(
-      allNames
-    );
-
-  let defaultNormScale = 1.0;
-  if (isArchitectural) {
-    if (maxDim > 45) {
-      defaultNormScale = maxDim > 250 ? 0.01 : 10.0 / maxDim;
-    } else if (maxDim < 0.25) {
-      defaultNormScale = 6.0 / maxDim;
-    }
-  } else {
-    if (maxDim > 8) {
-      defaultNormScale = 1.8 / maxDim;
-    } else if (maxDim < 0.05) {
-      defaultNormScale = 1.0 / maxDim;
-    }
-  }
+  // Preserve exact 1:1 real-world glTF scale in meters (1 glTF unit = 1 meter)
+  const defaultNormScale = 1.0;
 
   const cx = (globalMinX + globalMaxX) * 0.5;
   const cz = (globalMinZ + globalMaxZ) * 0.5;
@@ -408,9 +390,14 @@ export function parseGlbContainerPrimitives(
   return {
     assetId,
     primitives,
-    defaultNormScale: Number(defaultNormScale.toFixed(6)),
+    defaultNormScale,
     defaultNormOffset,
-    modelMaxDim: maxDim * defaultNormScale,
+    modelMaxDim: maxDim,
+    rawBoundsSize: [
+      Number(rawW.toFixed(3)),
+      Number(rawH.toFixed(3)),
+      Number(rawD.toFixed(3)),
+    ],
   };
 }
 
@@ -761,8 +748,8 @@ export function descriptorsToEntityInputs(
     assetSourceUrl?: string;
     assetAuthor?: string;
     assetLicense?: string;
-    groupId: string;
-    groupName: string;
+    groupId?: string;
+    groupName?: string;
     dropPosition?: Vec3;
     defaultMaterial: MaterialConfig;
   }

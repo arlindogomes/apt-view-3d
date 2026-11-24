@@ -51,6 +51,17 @@ export function App() {
         return;
       }
 
+      // Group (Ctrl+G) / Ungroup (Ctrl+Shift+G)
+      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyG' || e.key.toLowerCase() === 'g')) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          void state.ungroupSelectedEntities();
+        } else {
+          state.groupSelectedEntities();
+        }
+        return;
+      }
+
       // Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (state.selectedId) {

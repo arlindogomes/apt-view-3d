@@ -272,6 +272,7 @@ interface SceneStoreState {
   projectName: string;
   entities: SceneEntityData[];
   selectedId: string | null;
+  selectedIds: string[];
   cameraMode: CameraMode;
   gizmoMode: GizmoMode;
   toolMode: ToolMode;
@@ -288,6 +289,7 @@ interface SceneStoreState {
   isGitModalOpen: boolean;
   isInspectorVisible: boolean;
   groupTransformMode: boolean;
+  uniformScale: boolean;
   envIntensity: number;
   toastMessage: string | null;
   wallPreviewLength: number | null;
@@ -316,7 +318,8 @@ interface SceneStoreState {
 
   // Actions
   setProjectName: (name: string) => void;
-  selectEntity: (id: string | null) => void;
+  selectEntity: (id: string | null, additive?: boolean) => void;
+  setSelectedIds: (ids: string[]) => void;
   setCameraMode: (mode: CameraMode) => void;
   setGizmoMode: (mode: GizmoMode) => void;
   setToolMode: (mode: ToolMode) => void;
@@ -331,6 +334,8 @@ interface SceneStoreState {
   setInspectorVisible: (visible: boolean) => void;
   toggleInspector: () => void;
   setGroupTransformMode: (enabled: boolean) => void;
+  setUniformScale: (enabled: boolean) => void;
+  toggleUniformScale: () => void;
   setEnvIntensity: (intensity: number) => void;
   showToast: (msg: string) => void;
 
@@ -382,17 +387,26 @@ interface SceneStoreState {
   deleteEntity: (id: string) => void;
   duplicateEntity: (id: string) => SceneEntityData | null;
 
-  // Group operations for multi-part GLB assemblies
+  // Group operations for multi-part GLB assemblies & user-created groups
   setGroupVisibility: (groupId: string, visible: boolean) => void;
   setGroupLocked: (groupId: string, locked: boolean) => void;
   deleteGroup: (groupId: string) => void;
   commitGroupTranslation: (groupId: string, delta: Vec3) => void;
+  groupSelectedEntities: (customName?: string) => void;
+  ungroupSelectedEntities: () => Promise<void>;
 
   updateEntityDirect: (id: string, patch: Partial<SceneEntityData>) => void;
   commitEntityTransform: (
     id: string,
     before: { position: Vec3; rotation: Vec3; scale: Vec3 },
     after: { position: Vec3; rotation: Vec3; scale: Vec3 }
+  ) => void;
+  commitEntitiesTransformBatch: (
+    items: Array<{
+      id: string;
+      before: { position: Vec3; rotation: Vec3; scale: Vec3 };
+      after: { position: Vec3; rotation: Vec3; scale: Vec3 };
+    }>
   ) => void;
   updateEntityMaterial: (id: string, patch: Partial<MaterialConfig>) => void;
   updateEntityProps: (id: string, patch: Partial<SceneEntityData>) => void;
@@ -409,6 +423,7 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   projectName: initialDraft.projectName,
   entities: initialDraft.entities,
   selectedId: null,
+  selectedIds: [],
   cameraMode: 'perspective',
   gizmoMode: 'translate',
   toolMode: 'select',
@@ -431,6 +446,7 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   isGitModalOpen: false,
   isInspectorVisible: true,
   groupTransformMode: false,
+  uniformScale: true,
   envIntensity: 1.0,
   toastMessage: null,
   wallPreviewLength: null,
@@ -464,7 +480,54 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
     persistDraft(name, s.lighting, s.entities);
   },
 
-  selectEntity: (id) => set({ selectedId: id }),
+  selectEntity: (id, additive = false) => {
+    if (!id) {
+      set({ selectedId: null, selectedIds: [] });
+      return;
+    }
+    const { entities, selectedIds } = get();
+    const clicked = entities.find((e) => e.id === id);
+    if (!clicked) {
+      set({ selectedId: null, selectedIds: [] });
+      return;
+    }
+
+    if (additive) {
+      const exists = selectedIds.includes(id);
+      const nextIds = exists
+        ? selectedIds.filter((sid) => sid !== id)
+        : [...selectedIds, id];
+      set({
+        selectedIds: nextIds,
+        selectedId: nextIds.length > 0 ? nextIds[nextIds.length - 1] : null,
+      });
+      return;
+    }
+
+    // If entity belongs to a user-grouped set (groupId with >=2 unlocked members), select the whole group
+    if (clicked.groupId) {
+      const groupMembers = entities
+        .filter((e) => e.groupId === clicked.groupId && e.visible && !e.locked)
+        .map((e) => e.id);
+      if (groupMembers.length >= 2) {
+        set({
+          selectedIds: groupMembers,
+          selectedId: id,
+        });
+        return;
+      }
+    }
+
+    set({ selectedId: id, selectedIds: [id] });
+  },
+
+  setSelectedIds: (ids) => {
+    const unique = Array.from(new Set(ids));
+    set({
+      selectedIds: unique,
+      selectedId: unique.length > 0 ? unique[unique.length - 1] : null,
+    });
+  },
   setCameraMode: (mode) => set({ cameraMode: mode }),
   setGizmoMode: (mode) => set({ gizmoMode: mode }),
   setToolMode: (mode) =>
@@ -490,6 +553,8 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   setInspectorVisible: (visible) => set({ isInspectorVisible: visible }),
   toggleInspector: () => set((s) => ({ isInspectorVisible: !s.isInspectorVisible })),
   setGroupTransformMode: (enabled) => set({ groupTransformMode: enabled }),
+  setUniformScale: (enabled) => set({ uniformScale: enabled }),
+  toggleUniformScale: () => set((s) => ({ uniformScale: !s.uniformScale })),
   setEnvIntensity: (intensity) => set({ envIntensity: intensity }),
 
   showToast: (msg) => {
@@ -903,10 +968,162 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
     });
   },
 
+  groupSelectedEntities: (customName) => {
+    const { selectedIds, entities } = get();
+    const validIds = selectedIds.filter((id) => {
+      const e = entities.find((item) => item.id === id);
+      return e && !e.locked;
+    });
+    if (validIds.length < 2) {
+      get().showToast('Selecione 2 ou mais objetos (Shift+Clique ou Ctrl+Clique) para agrupar.');
+      return;
+    }
+
+    const newGroupId = `grp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
+    const existingGroupCount = new Set(entities.map((e) => e.groupId).filter(Boolean)).size;
+    const newGroupName = customName?.trim() || `Grupo ${existingGroupCount + 1}`;
+
+    const prevMap = new Map<string, { groupId?: string; groupName?: string }>();
+    for (const id of validIds) {
+      const item = entities.find((e) => e.id === id);
+      if (item) {
+        prevMap.set(id, { groupId: item.groupId, groupName: item.groupName });
+      }
+    }
+
+    const idSet = new Set(validIds);
+    get().executeCommand({
+      label: `Agrupar ${validIds.length} objetos (${newGroupName})`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.map((e) =>
+            idSet.has(e.id) ? { ...e, groupId: newGroupId, groupName: newGroupName } : e
+          ),
+          selectedIds: validIds,
+          selectedId: validIds[0],
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.map((e) => {
+            const prev = prevMap.get(e.id);
+            return prev ? { ...e, groupId: prev.groupId, groupName: prev.groupName } : e;
+          }),
+        })),
+    });
+    get().showToast(`${validIds.length} objetos agrupados em "${newGroupName}"!`);
+  },
+
+  ungroupSelectedEntities: async () => {
+    const { selectedIds, entities } = get();
+    if (selectedIds.length === 0) return;
+
+    const selectedEntities = entities.filter((e) => selectedIds.includes(e.id));
+
+    // Case 1: Single grouped/whole GLB entity -> decompose into its real 3D sub-elements!
+    if (
+      selectedEntities.length === 1 &&
+      selectedEntities[0].kind === 'glb' &&
+      !selectedEntities[0].glbPart
+    ) {
+      await get().splitGlbEntity(selectedEntities[0].id, 'smart');
+      return;
+    }
+
+    // Case 2: User-grouped entities (shared groupId) -> dissolve the group
+    const groupIds = new Set(
+      selectedEntities.map((e) => e.groupId).filter((g): g is string => Boolean(g))
+    );
+    if (groupIds.size > 0) {
+      const members = entities.filter((e) => e.groupId && groupIds.has(e.groupId));
+      const prevMap = new Map<string, { groupId?: string; groupName?: string }>();
+      for (const m of members) {
+        prevMap.set(m.id, { groupId: m.groupId, groupName: m.groupName });
+      }
+      const memberIds = new Set(members.map((m) => m.id));
+
+      get().executeCommand({
+        label: `Desagrupar ${members.length} objetos`,
+        execute: () =>
+          set((s) => ({
+            entities: s.entities.map((e) =>
+              memberIds.has(e.id) ? { ...e, groupId: undefined, groupName: undefined } : e
+            ),
+            selectedIds: members.length > 0 ? [members[0].id] : [],
+            selectedId: members.length > 0 ? members[0].id : null,
+          })),
+        undo: () =>
+          set((s) => ({
+            entities: s.entities.map((e) => {
+              const prev = prevMap.get(e.id);
+              return prev ? { ...e, groupId: prev.groupId, groupName: prev.groupName } : e;
+            }),
+          })),
+      });
+      get().showToast(`${members.length} objetos desagrupados! Agora podem ser movidos separadamente.`);
+      return;
+    }
+
+    // Case 3: Single GLB sub-part with further islands -> fine split
+    if (selectedEntities.length === 1 && selectedEntities[0].kind === 'glb') {
+      await get().splitGlbEntity(selectedEntities[0].id, 'fine');
+      return;
+    }
+
+    get().showToast('Selecione um modelo GLB ou um grupo para desagrupar.');
+  },
+
   updateEntityDirect: (id, patch) => {
     set((s) => ({
       entities: s.entities.map((e) => (e.id === id ? { ...e, ...patch } : e)),
     }));
+  },
+
+  commitEntitiesTransformBatch: (items) => {
+    const changedItems = items.filter(
+      (item) =>
+        item.before.position.some((v, i) => Math.abs(v - item.after.position[i]) > 1e-4) ||
+        item.before.rotation.some((v, i) => Math.abs(v - item.after.rotation[i]) > 1e-3) ||
+        item.before.scale.some((v, i) => Math.abs(v - item.after.scale[i]) > 1e-4)
+    );
+    if (changedItems.length === 0) return;
+
+    const afterMap = new Map(changedItems.map((i) => [i.id, i.after]));
+    const beforeMap = new Map(changedItems.map((i) => [i.id, i.before]));
+
+    get().executeCommand({
+      label:
+        changedItems.length === 1
+          ? `Transformar objeto`
+          : `Transformar ${changedItems.length} objetos`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.map((e) => {
+            const next = afterMap.get(e.id);
+            return next
+              ? {
+                  ...e,
+                  position: [...next.position] as Vec3,
+                  rotation: [...next.rotation] as Vec3,
+                  scale: [...next.scale] as Vec3,
+                }
+              : e;
+          }),
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.map((e) => {
+            const prev = beforeMap.get(e.id);
+            return prev
+              ? {
+                  ...e,
+                  position: [...prev.position] as Vec3,
+                  rotation: [...prev.rotation] as Vec3,
+                  scale: [...prev.scale] as Vec3,
+                }
+              : e;
+          }),
+        })),
+    });
   },
 
   commitEntityTransform: (id, before, after) => {

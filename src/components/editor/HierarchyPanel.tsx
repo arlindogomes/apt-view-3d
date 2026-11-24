@@ -39,7 +39,7 @@ const CATEGORY_META: Record<
 
 export const HierarchyPanel: React.FC = () => {
   const entities = useSceneStore((s) => s.entities);
-  const selectedId = useSceneStore((s) => s.selectedId);
+  const selectedIds = useSceneStore((s) => s.selectedIds);
   const selectEntity = useSceneStore((s) => s.selectEntity);
   const updateEntityProps = useSceneStore((s) => s.updateEntityProps);
   const deleteEntity = useSceneStore((s) => s.deleteEntity);
@@ -121,12 +121,12 @@ export const HierarchyPanel: React.FC = () => {
   };
 
   const renderEntityRow = (item: SceneEntityData) => {
-    const isSelected = item.id === selectedId;
+    const isSelected = selectedIds.includes(item.id);
     const isEditing = editingId === item.id;
     return (
       <div
         key={item.id}
-        onClick={() => selectEntity(item.id)}
+        onClick={(e) => selectEntity(item.id, e.shiftKey || e.ctrlKey || e.metaKey)}
         onDoubleClick={() => {
           setEditingId(item.id);
           setEditingName(item.name);

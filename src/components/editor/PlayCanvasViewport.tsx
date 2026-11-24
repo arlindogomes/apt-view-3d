@@ -53,7 +53,7 @@ export const PlayCanvasViewport: React.FC = () => {
           assetId,
           fileName: safeFileName,
           modelName: file.name.replace(/\.(glb|gltf)$/i, ''),
-          decompose: true,
+          decompose: false,
         });
       } catch (err) {
         console.error(err);

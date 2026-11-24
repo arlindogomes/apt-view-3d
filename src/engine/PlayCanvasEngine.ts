@@ -57,14 +57,12 @@ export class PlayCanvasEngine {
   private activeGizmoMode: GizmoMode = 'translate';
   private isGizmoDragging = false;
   private justFinishedGizmoDrag = false;
-  private attachedGizmoEntityId: string | null = null;
-  private attachedGizmoMode: GizmoMode | null = null;
-  private transformStartSnapshot: {
-    id: string;
-    position: Vec3;
-    rotation: Vec3;
-    scale: Vec3;
-  } | null = null;
+  private attachedGizmoKey: string | null = null;
+  private multiTransformStartSnapshots = new Map<
+    string,
+    { position: Vec3; rotation: Vec3; scale: Vec3 }
+  >();
+  private selectedIds: string[] = [];
 
   private records = new Map<string, ManagedEntityRecord>();
   private loadingGlbIds = new Set<string>();
@@ -196,7 +194,7 @@ export class PlayCanvasEngine {
     const initial = useSceneStore.getState();
     this.applyLightingPreset(initial.lighting, initial.envIntensity);
     this.syncEntitiesFromStore(initial.entities);
-    this.setSelectedId(initial.selectedId);
+    this.setSelectedIds(initial.selectedIds, initial.selectedId);
     this.setGizmoMode(initial.gizmoMode);
     this.setCameraMode(initial.cameraMode);
     this.setToolMode(initial.toolMode);
@@ -207,8 +205,8 @@ export class PlayCanvasEngine {
       if (state.entities !== prev.entities) {
         this.syncEntitiesFromStore(state.entities);
       }
-      if (state.selectedId !== prev.selectedId) {
-        this.setSelectedId(state.selectedId);
+      if (state.selectedIds !== prev.selectedIds || state.selectedId !== prev.selectedId) {
+        this.setSelectedIds(state.selectedIds, state.selectedId);
       }
       if (state.gizmoMode !== prev.gizmoMode) {
         this.setGizmoMode(state.gizmoMode);
@@ -261,74 +259,63 @@ export class PlayCanvasEngine {
       gizmo.on(pc.TransformGizmo.EVENT_TRANSFORMSTART, () => {
         this.isGizmoDragging = true;
         this.cameraController.setSuppressed(true);
-        this.groupDragPeerStartPositions.clear();
-        if (this.selectedId) {
-          const rec = this.records.get(this.selectedId);
-          if (rec) {
-            this.transformStartSnapshot = {
-              id: this.selectedId,
+        this.multiTransformStartSnapshots.clear();
+        for (const id of this.selectedIds) {
+          const rec = this.records.get(id);
+          if (rec && rec.data.visible && !rec.data.locked) {
+            this.multiTransformStartSnapshots.set(id, {
               position: [...rec.data.position] as Vec3,
               rotation: [...rec.data.rotation] as Vec3,
               scale: [...rec.data.scale] as Vec3,
-            };
-            const store = useSceneStore.getState();
-            if (store.groupTransformMode && rec.data.groupId) {
-              for (const [peerId, peerRec] of this.records.entries()) {
-                if (
-                  peerId !== this.selectedId &&
-                  peerRec.data.groupId === rec.data.groupId &&
-                  !peerRec.data.locked
-                ) {
-                  this.groupDragPeerStartPositions.set(peerId, [
-                    ...peerRec.data.position,
-                  ] as Vec3);
-                }
-              }
-            }
+            });
           }
         }
       });
 
       gizmo.on(pc.TransformGizmo.EVENT_TRANSFORMMOVE, () => {
-        if (!this.selectedId) return;
-        const rec = this.records.get(this.selectedId);
-        if (!rec) return;
+        if (this.selectedIds.length === 0) return;
+        const store = useSceneStore.getState();
+        const isUniformScale = this.activeGizmoMode === 'scale' && store.uniformScale;
 
-        // Apply floor collision clamping on horizontal translation
-        if (this.activeGizmoMode === 'translate' && this.snap.floorClamp) {
-          this.clampEntityToFloor(rec);
-        }
+        for (const id of this.selectedIds) {
+          const rec = this.records.get(id);
+          if (!rec || rec.data.locked) continue;
 
-        const pos = rec.entity.getLocalPosition();
-        const rot = rec.entity.getLocalEulerAngles();
-        const scl = rec.entity.getLocalScale();
-
-        useSceneStore.getState().updateEntityDirect(this.selectedId, {
-          position: [pos.x, pos.y, pos.z],
-          rotation: [rot.x, rot.y, rot.z],
-          scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
-        });
-
-        // If groupTransformMode is active on a multi-part GLB group, move peer elements along
-        if (
-          this.activeGizmoMode === 'translate' &&
-          this.transformStartSnapshot &&
-          this.groupDragPeerStartPositions.size > 0
-        ) {
-          const dx = pos.x - this.transformStartSnapshot.position[0];
-          const dy = pos.y - this.transformStartSnapshot.position[1];
-          const dz = pos.z - this.transformStartSnapshot.position[2];
-          for (const [peerId, startPos] of this.groupDragPeerStartPositions.entries()) {
-            const peerRec = this.records.get(peerId);
-            if (!peerRec) continue;
-            const nx = startPos[0] + dx;
-            const ny = startPos[1] + dy;
-            const nz = startPos[2] + dz;
-            peerRec.entity.setLocalPosition(nx, ny, nz);
-            useSceneStore.getState().updateEntityDirect(peerId, {
-              position: [nx, ny, nz],
-            });
+          if (this.activeGizmoMode === 'translate' && this.snap.floorClamp) {
+            this.clampEntityToFloor(rec);
           }
+
+          const pos = rec.entity.getLocalPosition();
+          const rot = rec.entity.getLocalEulerAngles();
+          const scl = rec.entity.getLocalScale();
+          let sx = Math.max(0.02, scl.x);
+          let sy = Math.max(0.02, scl.y);
+          let sz = Math.max(0.02, scl.z);
+
+          // Enforce uniform proportional scale across X, Y, Z when uniformScale boolean is enabled
+          if (isUniformScale) {
+            const start = this.multiTransformStartSnapshots.get(id);
+            if (start) {
+              const rx = sx / Math.max(0.001, start.scale[0]);
+              const ry = sy / Math.max(0.001, start.scale[1]);
+              const rz = sz / Math.max(0.001, start.scale[2]);
+              const dx = Math.abs(rx - 1);
+              const dy = Math.abs(ry - 1);
+              const dz = Math.abs(rz - 1);
+              const ratio = dx >= dy && dx >= dz ? rx : dy >= dz ? ry : rz;
+              const safeRatio = Math.max(0.02, ratio);
+              sx = Math.max(0.02, start.scale[0] * safeRatio);
+              sy = Math.max(0.02, start.scale[1] * safeRatio);
+              sz = Math.max(0.02, start.scale[2] * safeRatio);
+              rec.entity.setLocalScale(sx, sy, sz);
+            }
+          }
+
+          store.updateEntityDirect(id, {
+            position: [pos.x, pos.y, pos.z],
+            rotation: [rot.x, rot.y, rot.z],
+            scale: [sx, sy, sz],
+          });
         }
       });
 
@@ -339,58 +326,33 @@ export class PlayCanvasEngine {
           this.justFinishedGizmoDrag = false;
         }, 120);
         this.cameraController.setSuppressed(false);
-        if (this.transformStartSnapshot) {
-          const rec = this.records.get(this.transformStartSnapshot.id);
-          if (rec) {
+
+        if (this.multiTransformStartSnapshots.size > 0) {
+          const batch: Array<{
+            id: string;
+            before: { position: Vec3; rotation: Vec3; scale: Vec3 };
+            after: { position: Vec3; rotation: Vec3; scale: Vec3 };
+          }> = [];
+
+          for (const [id, before] of this.multiTransformStartSnapshots.entries()) {
+            const rec = this.records.get(id);
+            if (!rec) continue;
             const pos = rec.entity.getLocalPosition();
             const rot = rec.entity.getLocalEulerAngles();
             const scl = rec.entity.getLocalScale();
-
-            if (
-              this.activeGizmoMode === 'translate' &&
-              rec.data.groupId &&
-              this.groupDragPeerStartPositions.size > 0
-            ) {
-              const dx = pos.x - this.transformStartSnapshot.position[0];
-              const dy = pos.y - this.transformStartSnapshot.position[1];
-              const dz = pos.z - this.transformStartSnapshot.position[2];
-              // Restore pre-drag positions then commit atomic group translation for undo/redo
-              rec.entity.setLocalPosition(
-                this.transformStartSnapshot.position[0],
-                this.transformStartSnapshot.position[1],
-                this.transformStartSnapshot.position[2]
-              );
-              useSceneStore.getState().updateEntityDirect(rec.data.id, {
-                position: [...this.transformStartSnapshot.position] as Vec3,
-              });
-              for (const [peerId, startPos] of this.groupDragPeerStartPositions.entries()) {
-                const peerRec = this.records.get(peerId);
-                if (peerRec) {
-                  peerRec.entity.setLocalPosition(startPos[0], startPos[1], startPos[2]);
-                  useSceneStore.getState().updateEntityDirect(peerId, {
-                    position: [...startPos] as Vec3,
-                  });
-                }
-              }
-              useSceneStore.getState().commitGroupTranslation(rec.data.groupId, [dx, dy, dz]);
-            } else {
-              useSceneStore.getState().commitEntityTransform(
-                this.transformStartSnapshot.id,
-                {
-                  position: this.transformStartSnapshot.position,
-                  rotation: this.transformStartSnapshot.rotation,
-                  scale: this.transformStartSnapshot.scale,
-                },
-                {
-                  position: [pos.x, pos.y, pos.z],
-                  rotation: [rot.x, rot.y, rot.z],
-                  scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
-                }
-              );
-            }
+            batch.push({
+              id,
+              before,
+              after: {
+                position: [pos.x, pos.y, pos.z],
+                rotation: [rot.x, rot.y, rot.z],
+                scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
+              },
+            });
           }
-          this.transformStartSnapshot = null;
-          this.groupDragPeerStartPositions.clear();
+
+          useSceneStore.getState().commitEntitiesTransformBatch(batch);
+          this.multiTransformStartSnapshots.clear();
         }
       });
     });
@@ -641,7 +603,7 @@ export class PlayCanvasEngine {
     entity.enabled = data.visible;
 
     // Avoid fighting active gizmo drag
-    if (!this.isGizmoDragging || this.selectedId !== data.id) {
+    if (!this.isGizmoDragging || !this.selectedIds.includes(data.id)) {
       entity.setLocalPosition(data.position[0], data.position[1], data.position[2]);
       entity.setLocalEulerAngles(data.rotation[0], data.rotation[1], data.rotation[2]);
       entity.setLocalScale(data.scale[0], data.scale[1], data.scale[2]);
@@ -764,7 +726,8 @@ export class PlayCanvasEngine {
     decompose?: boolean;
   }): Promise<void> {
     const store = useSceneStore.getState();
-    const shouldDecompose = params.decompose !== false;
+    // Models arrive grouped by default unless decompose === true is explicitly requested
+    const shouldDecompose = params.decompose === true;
 
     const parsed = await this.getOrLoadParsedGlb(
       params.assetId,
@@ -777,33 +740,36 @@ export class PlayCanvasEngine {
       return;
     }
 
-    const groupId = `grp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    if (!shouldDecompose) {
+      // Import as a single grouped whole-GLB entity in exact 1:1 real-world meters
+      store.addEntity({
+        name: params.modelName,
+        category: 'furniture',
+        kind: 'glb',
+        tags: ['glb', 'agrupado'],
+        visible: true,
+        locked: false,
+        position: [0, 0.1, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        baseSize: parsed.rawBoundsSize,
+        material: createDefaultMaterial('original'),
+        assetId: params.assetId,
+        assetFileName: params.fileName,
+        assetSourceUrl: params.sourceUrl,
+        assetAuthor: params.author,
+        assetLicense: params.license,
+      });
+      const [w, h, d] = parsed.rawBoundsSize;
+      store.showToast(
+        `"${params.modelName}" importado agrupado (${w}m × ${h}m × ${d}m). Use Desagrupar (Ctrl+Shift+G) para separar elementos 3D.`
+      );
+      return;
+    }
+
     const descriptors = buildDecomposedPartDescriptors(parsed, params.modelName, {
       granularity: 'smart',
     });
-
-    if (!shouldDecompose || descriptors.length <= 1) {
-      const single = descriptors[0];
-      const inputs = descriptorsToEntityInputs(
-        single ? [single] : descriptors,
-        {
-          assetId: params.assetId,
-          assetFileName: params.fileName,
-          assetSourceUrl: params.sourceUrl,
-          assetAuthor: params.author,
-          assetLicense: params.license,
-          groupId,
-          groupName: params.modelName,
-          dropPosition: [0, 0.1, 0],
-          defaultMaterial: createDefaultMaterial('original'),
-        }
-      );
-      if (inputs.length > 0) {
-        store.addEntity(inputs[0]);
-        store.showToast(`"${params.modelName}" importado para a cena!`);
-      }
-      return;
-    }
 
     const entityInputs = descriptorsToEntityInputs(descriptors, {
       assetId: params.assetId,
@@ -811,8 +777,8 @@ export class PlayCanvasEngine {
       assetSourceUrl: params.sourceUrl,
       assetAuthor: params.author,
       assetLicense: params.license,
-      groupId,
-      groupName: params.modelName,
+      groupId: undefined,
+      groupName: undefined,
       dropPosition: [0, 0.1, 0],
       defaultMaterial: createDefaultMaterial('original'),
     });
@@ -845,9 +811,8 @@ export class PlayCanvasEngine {
     }
 
     const baseName = target.groupName || target.name;
-    const groupId =
-      target.groupId ||
-      `grp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    // Leave ungrouped (groupId = undefined) so each separated 3D element is immediately independent
+    const groupId = undefined;
 
     const descriptors = target.glbPart
       ? buildDecomposedPartDescriptors(parsed, target.name, {
@@ -1041,8 +1006,9 @@ export class PlayCanvasEngine {
     }
   }
 
-  private setSelectedId(id: string | null): void {
-    this.selectedId = id;
+  private setSelectedIds(ids: string[], primaryId: string | null): void {
+    this.selectedIds = ids;
+    this.selectedId = primaryId;
     this.refreshGizmoAttachment();
   }
 
@@ -1068,41 +1034,43 @@ export class PlayCanvasEngine {
 
   private detachAllGizmos(): void {
     Object.values(this.gizmos).forEach((g) => g.detach());
-    this.attachedGizmoEntityId = null;
-    this.attachedGizmoMode = null;
+    this.attachedGizmoKey = null;
   }
 
   private refreshGizmoAttachment(): void {
     // CRITICAL: Never detach/re-attach gizmos while user is actively dragging!
     if (this.isGizmoDragging) return;
 
-    if (this.toolMode !== 'select' || !this.selectedId) {
-      if (this.attachedGizmoEntityId !== null) {
+    if (this.toolMode !== 'select' || this.selectedIds.length === 0) {
+      if (this.attachedGizmoKey !== null) {
         this.detachAllGizmos();
       }
       return;
     }
 
-    const rec = this.records.get(this.selectedId);
-    if (!rec || !rec.data.visible || rec.data.locked) {
-      if (this.attachedGizmoEntityId !== null) {
+    const targets: pc.Entity[] = [];
+    const targetIds: string[] = [];
+    for (const id of this.selectedIds) {
+      const rec = this.records.get(id);
+      if (rec && rec.data.visible && !rec.data.locked) {
+        targets.push(rec.entity);
+        targetIds.push(id);
+      }
+    }
+
+    if (targets.length === 0) {
+      if (this.attachedGizmoKey !== null) {
         this.detachAllGizmos();
       }
       return;
     }
 
-    // Avoid redundant detach/attach if already attached to the same entity in the same mode
-    if (
-      this.attachedGizmoEntityId === this.selectedId &&
-      this.attachedGizmoMode === this.activeGizmoMode
-    ) {
-      return;
-    }
+    const key = `${this.activeGizmoMode}:${targetIds.join(',')}`;
+    if (this.attachedGizmoKey === key) return;
 
     this.detachAllGizmos();
-    this.gizmos[this.activeGizmoMode].attach([rec.entity]);
-    this.attachedGizmoEntityId = this.selectedId;
-    this.attachedGizmoMode = this.activeGizmoMode;
+    this.gizmos[this.activeGizmoMode].attach(targets);
+    this.attachedGizmoKey = key;
   }
 
   public focusOnSelected(): void {
@@ -1247,7 +1215,8 @@ export class PlayCanvasEngine {
       }
     }
 
-    useSceneStore.getState().selectEntity(closestId);
+    const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+    useSceneStore.getState().selectEntity(closestId, additive);
   };
 
   private onDoubleClick = () => {
@@ -1396,31 +1365,13 @@ export class PlayCanvasEngine {
       new pc.Color(0.25, 0.5, 0.95, 0.9)
     );
 
-    // Draw selection bounding box highlight
-    if (this.selectedId) {
-      const rec = this.records.get(this.selectedId);
+    // Draw selection bounding box highlight for all selected entities
+    for (const id of this.selectedIds) {
+      const rec = this.records.get(id);
       if (rec && rec.data.visible) {
         const aabb = computeEntityWorldAABB(rec.entity);
         if (aabb) {
           this.drawWireBox(aabb, new pc.Color(0.23, 0.56, 1.0, 1));
-        }
-
-        // If groupTransformMode is enabled and selected entity belongs to a multi-part GLB group,
-        // highlight sibling parts in cyan so the user sees the active assembly
-        if (useSceneStore.getState().groupTransformMode && rec.data.groupId) {
-          const siblingColor = new pc.Color(0.15, 0.82, 0.95, 0.65);
-          for (const [peerId, peerRec] of this.records.entries()) {
-            if (
-              peerId !== this.selectedId &&
-              peerRec.data.groupId === rec.data.groupId &&
-              peerRec.data.visible
-            ) {
-              const peerAabb = computeEntityWorldAABB(peerRec.entity);
-              if (peerAabb) {
-                this.drawWireBox(peerAabb, siblingColor);
-              }
-            }
-          }
         }
       }
     }

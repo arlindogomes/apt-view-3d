@@ -34,7 +34,7 @@ export const SketchfabModal: React.FC = () => {
 
   const [token, setTokenState] = useState(getSketchfabToken);
   const [rememberToken, setRememberToken] = useState(isSketchfabTokenPersisted);
-  const [decomposeOnImport, setDecomposeOnImport] = useState(true);
+  const [decomposeOnImport, setDecomposeOnImport] = useState(false);
   const [tab, setTab] = useState<'free' | 'sketchfab'>(
     getSketchfabToken() ? 'sketchfab' : 'free'
   );

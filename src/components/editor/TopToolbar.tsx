@@ -7,6 +7,7 @@ import {
   GitBranch,
   Globe,
   Grid3X3,
+  Group,
   Layers,
   Magnet,
   Maximize2,
@@ -19,6 +20,7 @@ import {
   Square,
   Sun,
   Undo2,
+  Ungroup,
   Upload,
   User,
 } from 'lucide-react';
@@ -50,6 +52,10 @@ export const TopToolbar: React.FC = () => {
   const redoStack = useSceneStore((s) => s.redoStack);
   const undo = useSceneStore((s) => s.undo);
   const redo = useSceneStore((s) => s.redo);
+  const selectedIds = useSceneStore((s) => s.selectedIds);
+  const entities = useSceneStore((s) => s.entities);
+  const groupSelectedEntities = useSceneStore((s) => s.groupSelectedEntities);
+  const ungroupSelectedEntities = useSceneStore((s) => s.ungroupSelectedEntities);
   const addPrimitive = useSceneStore((s) => s.addPrimitive);
   const importGlbAsset = useSceneStore((s) => s.importGlbAsset);
   const setSketchfabOpen = useSceneStore((s) => s.setSketchfabOpen);
@@ -74,7 +80,7 @@ export const TopToolbar: React.FC = () => {
         assetId,
         fileName: safeFileName,
         modelName,
-        decompose: true,
+        decompose: false,
       });
     } catch {
       showToast('Erro ao importar arquivo GLB.');
@@ -221,6 +227,48 @@ export const TopToolbar: React.FC = () => {
           >
             <Maximize2 className="w-3.5 h-3.5" />
             <span className="text-[10px] opacity-75 font-mono">R</span>
+          </button>
+        </div>
+
+        {/* Group / Ungroup (Ctrl+G / Ctrl+Shift+G) */}
+        <div className="flex items-center gap-1 border-l border-[#2a3040] pl-2">
+          <button
+            onClick={() => groupSelectedEntities()}
+            disabled={selectedIds.length < 2}
+            title="Agrupar objetos selecionados (Ctrl+G — use Shift+Clique para selecionar vários)"
+            className={`${btnBase} bg-[#1d212d] border border-[#2a3040] ${
+              selectedIds.length < 2
+                ? 'opacity-40 cursor-not-allowed text-gray-500'
+                : 'text-cyan-300 hover:bg-[#272d3d] hover:text-white'
+            }`}
+          >
+            <Group className="w-3.5 h-3.5" />
+            <span className="hidden 2xl:inline">Agrupar</span>
+          </button>
+          <button
+            onClick={() => ungroupSelectedEntities()}
+            disabled={
+              selectedIds.length === 0 ||
+              !entities.some(
+                (e) =>
+                  selectedIds.includes(e.id) &&
+                  (Boolean(e.groupId) || e.kind === 'glb')
+              )
+            }
+            title="Desagrupar grupo ou separar elementos 3D de um modelo GLB (Ctrl+Shift+G)"
+            className={`${btnBase} bg-[#1d212d] border border-[#2a3040] ${
+              selectedIds.length === 0 ||
+              !entities.some(
+                (e) =>
+                  selectedIds.includes(e.id) &&
+                  (Boolean(e.groupId) || e.kind === 'glb')
+              )
+                ? 'opacity-40 cursor-not-allowed text-gray-500'
+                : 'text-amber-300 hover:bg-[#272d3d] hover:text-white'
+            }`}
+          >
+            <Ungroup className="w-3.5 h-3.5" />
+            <span className="hidden 2xl:inline">Desagrupar</span>
           </button>
         </div>
 
