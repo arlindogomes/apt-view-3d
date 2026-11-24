@@ -10,14 +10,24 @@ import {
   getGlbAsset,
   saveGlbAsset,
 } from './assetDb';
+import {
+  assertNoSecretsInPayload,
+  sanitizeGlbFileName,
+  sanitizeProjectSlug,
+  sanitizePublicAssetUrl,
+} from './security';
+import { getSketchfabToken } from './sketchfab';
 
 const GIT_CONFIG_STORAGE_KEY = 'apt_view_git_config';
+const GIT_TOKEN_SESSION_KEY = 'apt_view_git_token_session';
+const GIT_TOKEN_PERSIST_KEY = 'apt_view_git_token_persist';
 
 export interface SavedGitConfig {
   owner: string;
   repo: string;
   token: string;
   projectName: string;
+  rememberToken?: boolean;
 }
 
 export function detectRepoFromGitHubPages(): { owner: string; repo: string } | null {
@@ -38,14 +48,25 @@ export function detectRepoFromGitHubPages(): { owner: string; repo: string } | n
 export function loadSavedGitConfig(): SavedGitConfig {
   const detected = detectRepoFromGitHubPages();
   try {
+    const sessionToken = sessionStorage.getItem(GIT_TOKEN_SESSION_KEY) || '';
+    const persistedToken = localStorage.getItem(GIT_TOKEN_PERSIST_KEY) || '';
     const raw = localStorage.getItem(GIT_CONFIG_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SavedGitConfig>;
+      // Migrate any legacy plaintext token out of shared localStorage into sessionStorage
+      let activeToken = sessionToken || (parsed.rememberToken ? persistedToken : '');
+      if (parsed.token) {
+        activeToken = activeToken || parsed.token;
+        sessionStorage.setItem(GIT_TOKEN_SESSION_KEY, activeToken);
+        delete parsed.token;
+        localStorage.setItem(GIT_CONFIG_STORAGE_KEY, JSON.stringify(parsed));
+      }
       return {
         owner: parsed.owner || detected?.owner || '',
         repo: parsed.repo || detected?.repo || '',
-        token: parsed.token || '',
+        token: activeToken,
         projectName: parsed.projectName || 'planta-principal',
+        rememberToken: Boolean(parsed.rememberToken),
       };
     }
   } catch {
@@ -56,12 +77,53 @@ export function loadSavedGitConfig(): SavedGitConfig {
     repo: detected?.repo || '',
     token: '',
     projectName: 'planta-principal',
+    rememberToken: false,
   };
 }
 
 export function saveGitConfig(config: SavedGitConfig): void {
   try {
-    localStorage.setItem(GIT_CONFIG_STORAGE_KEY, JSON.stringify(config));
+    const trimmedToken = config.token.trim();
+    const remember = Boolean(config.rememberToken);
+
+    if (trimmedToken) {
+      sessionStorage.setItem(GIT_TOKEN_SESSION_KEY, trimmedToken);
+    } else {
+      sessionStorage.removeItem(GIT_TOKEN_SESSION_KEY);
+    }
+
+    if (remember && trimmedToken) {
+      localStorage.setItem(GIT_TOKEN_PERSIST_KEY, trimmedToken);
+    } else {
+      localStorage.removeItem(GIT_TOKEN_PERSIST_KEY);
+    }
+
+    // Never store plaintext token inside the general config JSON in localStorage
+    localStorage.setItem(
+      GIT_CONFIG_STORAGE_KEY,
+      JSON.stringify({
+        owner: config.owner.trim(),
+        repo: config.repo.trim(),
+        projectName: config.projectName.trim() || 'planta-principal',
+        rememberToken: remember,
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function clearSavedGitToken(): void {
+  try {
+    sessionStorage.removeItem(GIT_TOKEN_SESSION_KEY);
+    localStorage.removeItem(GIT_TOKEN_PERSIST_KEY);
+    const raw = localStorage.getItem(GIT_CONFIG_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      delete parsed.token;
+      parsed.rememberToken = false;
+      localStorage.setItem(GIT_CONFIG_STORAGE_KEY, JSON.stringify(parsed));
+    }
   } catch {
     // ignore
   }
@@ -70,16 +132,25 @@ export function saveGitConfig(config: SavedGitConfig): void {
 export function serializeSceneDeterministic(doc: SceneDocument): string {
   const sortedEntities = [...doc.entities]
     .sort((a, b) => a.id.localeCompare(b.id))
-    .map((entity) => ({
-      ...entity,
-      position: entity.position.map((v) => Number(v.toFixed(4))) as [number, number, number],
-      rotation: entity.rotation.map((v) => Number(v.toFixed(2))) as [number, number, number],
-      scale: entity.scale.map((v) => Number(v.toFixed(4))) as [number, number, number],
-    }));
+    .map((entity) => {
+      const safeFileName = entity.assetFileName
+        ? sanitizeGlbFileName(entity.assetFileName, entity.assetId || entity.id)
+        : undefined;
+      const safeSourceUrl = sanitizePublicAssetUrl(entity.assetSourceUrl);
+
+      return {
+        ...entity,
+        assetFileName: safeFileName,
+        assetSourceUrl: safeSourceUrl,
+        position: entity.position.map((v) => Number(v.toFixed(4))) as [number, number, number],
+        rotation: entity.rotation.map((v) => Number(v.toFixed(2))) as [number, number, number],
+        scale: entity.scale.map((v) => Number(v.toFixed(4))) as [number, number, number],
+      };
+    });
 
   const cleanDoc: SceneDocument = {
     version: doc.version,
-    projectName: doc.projectName,
+    projectName: sanitizeProjectSlug(doc.projectName),
     lighting: doc.lighting,
     entities: sortedEntities,
   };
@@ -91,11 +162,20 @@ export class GitHubSceneService {
   private octokit: Octokit;
   private owner: string;
   private repo: string;
+  private tokenValue: string;
 
   constructor(owner: string, repo: string, token: string) {
     this.owner = owner.trim();
     this.repo = repo.trim();
-    this.octokit = new Octokit({ auth: token.trim() });
+    this.tokenValue = token.trim();
+    this.octokit = new Octokit({ auth: this.tokenValue });
+  }
+
+  private getActiveSecretsList() {
+    return [
+      { label: 'GitHub Personal Access Token', value: this.tokenValue },
+      { label: 'Sketchfab Personal API Token', value: getSketchfabToken() },
+    ];
   }
 
   async connectRepository(): Promise<{
@@ -120,45 +200,6 @@ export class GitHubSceneService {
     };
   }
 
-  async connectAndEnsureCollabBranch(customBranch?: string): Promise<{
-    userLogin: string;
-    userAvatar: string;
-    defaultBranch: string;
-    activeBranch: string;
-    branches: GitBranchInfo[];
-  }> {
-    const [{ data: user }, { data: repoData }] = await Promise.all([
-      this.octokit.users.getAuthenticated(),
-      this.octokit.repos.get({ owner: this.owner, repo: this.repo }),
-    ]);
-
-    const defaultBranch = repoData.default_branch || 'main';
-    const branches = await this.listBranches();
-
-    const today = new Date().toISOString().slice(0, 10);
-    const targetBranch =
-      customBranch?.trim() || `collab/${user.login.toLowerCase()}-${today}`;
-
-    const safeTarget =
-      targetBranch === defaultBranch || targetBranch === 'main'
-        ? `collab/${user.login.toLowerCase()}-${today}`
-        : targetBranch;
-
-    const exists = branches.some((b) => b.name === safeTarget);
-    if (!exists) {
-      await this.createBranchFrom(safeTarget, defaultBranch);
-    }
-
-    const updatedBranches = await this.listBranches();
-    return {
-      userLogin: user.login,
-      userAvatar: user.avatar_url,
-      defaultBranch,
-      activeBranch: safeTarget,
-      branches: updatedBranches,
-    };
-  }
-
   async listBranches(): Promise<GitBranchInfo[]> {
     const { data } = await this.octokit.repos.listBranches({
       owner: this.owner,
@@ -173,6 +214,7 @@ export class GitHubSceneService {
   }
 
   async createBranchFrom(newBranch: string, fromBranch: string): Promise<void> {
+    assertNoSecretsInPayload(newBranch, this.getActiveSecretsList());
     const { data: refData } = await this.octokit.git.getRef({
       owner: this.owner,
       repo: this.repo,
@@ -215,11 +257,14 @@ export class GitHubSceneService {
       );
     }
 
-    const projectSlug =
-      doc.projectName
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9-_]/g, '-') || 'planta-principal';
+    const projectSlug = sanitizeProjectSlug(doc.projectName);
+    const sceneContent = serializeSceneDeterministic(doc);
+    const activeSecrets = this.getActiveSecretsList();
+
+    // Verify no tokens or secrets exist in scene.json, commit message, or branch name
+    assertNoSecretsInPayload(sceneContent, activeSecrets);
+    assertNoSecretsInPayload(commitMessage, activeSecrets);
+    assertNoSecretsInPayload(branch, activeSecrets);
 
     // 1. Get latest commit on target branch
     const { data: refData } = await this.octokit.git.getRef({
@@ -244,7 +289,6 @@ export class GitHubSceneService {
       sha: string;
     }> = [];
 
-    const sceneContent = serializeSceneDeterministic(doc);
     const { data: sceneBlob } = await this.octokit.git.createBlob({
       owner: this.owner,
       repo: this.repo,
@@ -268,8 +312,10 @@ export class GitHubSceneService {
         seenAssets.add(entity.assetId);
         const stored = await getGlbAsset(entity.assetId);
         if (stored) {
-          const safeFileName = (entity.assetFileName || stored.fileName || `${entity.assetId}.glb`)
-            .replace(/[^a-zA-Z0-9._-]/g, '_');
+          const safeFileName = sanitizeGlbFileName(
+            entity.assetFileName || stored.fileName || `${entity.assetId}.glb`,
+            entity.assetId
+          );
           const b64 = arrayBufferToBase64(stored.buffer);
           const { data: assetBlob } = await this.octokit.git.createBlob({
             owner: this.owner,
@@ -318,11 +364,7 @@ export class GitHubSceneService {
     branch: string,
     projectName: string
   ): Promise<SceneDocument | null> {
-    const projectSlug =
-      projectName
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9-_]/g, '-') || 'planta-principal';
+    const projectSlug = sanitizeProjectSlug(projectName);
 
     try {
       const { data } = await this.octokit.repos.getContent({
@@ -339,13 +381,17 @@ export class GitHubSceneService {
       const decoded = new TextDecoder().decode(base64ToArrayBuffer(data.content));
       const doc = JSON.parse(decoded) as SceneDocument;
 
-      // Download referenced GLB assets from branch into IndexedDB if missing locally
+      // Sanitize loaded entities and download referenced GLB assets into IndexedDB if missing locally
       for (const entity of doc.entities) {
         if (entity.kind === 'glb' && entity.assetId && entity.assetFileName) {
+          const safeFileName = sanitizeGlbFileName(entity.assetFileName, entity.assetId);
+          entity.assetFileName = safeFileName;
+          entity.assetSourceUrl = sanitizePublicAssetUrl(entity.assetSourceUrl);
+
           const existing = await getGlbAsset(entity.assetId);
           if (!existing) {
             try {
-              const assetPath = `projects/${projectSlug}/assets/${entity.assetFileName}`;
+              const assetPath = `projects/${projectSlug}/assets/${safeFileName}`;
               const { data: assetData } = await this.octokit.repos.getContent({
                 owner: this.owner,
                 repo: this.repo,
@@ -365,11 +411,11 @@ export class GitHubSceneService {
                   buffer = base64ToArrayBuffer(blob.content);
                 }
                 if (buffer) {
-                  await saveGlbAsset(entity.assetId, entity.assetFileName, buffer);
+                  await saveGlbAsset(entity.assetId, safeFileName, buffer);
                 }
               }
             } catch {
-              // Asset may not exist in repo yet, fallback to assetSourceUrl if present
+              // Asset may not exist in repo yet, fallback to sanitized assetSourceUrl if present
             }
           }
         }
@@ -387,6 +433,10 @@ export class GitHubSceneService {
     title: string,
     body: string
   ): Promise<{ url: string; number: number }> {
+    const activeSecrets = this.getActiveSecretsList();
+    assertNoSecretsInPayload(title, activeSecrets);
+    assertNoSecretsInPayload(body, activeSecrets);
+
     const { data } = await this.octokit.pulls.create({
       owner: this.owner,
       repo: this.repo,

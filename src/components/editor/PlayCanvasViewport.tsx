@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { PlayCanvasEngine } from '../../engine/PlayCanvasEngine';
 import { saveGlbAsset } from '../../services/assetDb';
-import { createDefaultMaterial, useSceneStore } from '../../store/sceneStore';
+import { sanitizeGlbFileName } from '../../services/security';
+import { useSceneStore } from '../../store/sceneStore';
 
 export const PlayCanvasViewport: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -15,7 +16,7 @@ export const PlayCanvasViewport: React.FC = () => {
   const polygonVertexCount = useSceneStore((s) => s.polygonVertexCount);
   const wallConfig = useSceneStore((s) => s.wallConfig);
   const updateWallConfig = useSceneStore((s) => s.updateWallConfig);
-  const addEntity = useSceneStore((s) => s.addEntity);
+  const importGlbAsset = useSceneStore((s) => s.importGlbAsset);
   const showToast = useSceneStore((s) => s.showToast);
 
   useEffect(() => {
@@ -45,23 +46,15 @@ export const PlayCanvasViewport: React.FC = () => {
       try {
         const buffer = await file.arrayBuffer();
         const assetId = `glb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-        await saveGlbAsset(assetId, file.name, buffer);
+        const safeFileName = sanitizeGlbFileName(file.name, assetId);
+        await saveGlbAsset(assetId, safeFileName, buffer);
 
-        addEntity({
-          name: file.name.replace(/\.(glb|gltf)$/i, ''),
-          category: 'furniture',
-          kind: 'glb',
-          tags: ['glb', 'importado'],
-          visible: true,
-          locked: false,
-          position: [0, 0.1, 0],
-          rotation: [0, 0, 0],
-          scale: [1, 1, 1],
-          material: createDefaultMaterial('original'),
+        await importGlbAsset({
           assetId,
-          assetFileName: file.name,
+          fileName: safeFileName,
+          modelName: file.name.replace(/\.(glb|gltf)$/i, ''),
+          decompose: true,
         });
-        showToast(`Modelo "${file.name}" importado e salvo no IndexedDB.`);
       } catch (err) {
         console.error(err);
         showToast(`Erro ao importar ${file.name}`);

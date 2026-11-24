@@ -50,6 +50,86 @@ export function intersectRayAABB(ray: pc.Ray, aabb: pc.BoundingBox): number | nu
 }
 
 /**
+ * Möller–Trumbore ray-triangle intersection against local-space mesh buffers.
+ * Transforms the world-space ray into the entity's local space and returns the closest
+ * world-space distance `t` along `worldRay`, or `null` if no triangle is hit.
+ */
+export function intersectRayTriangleMeshWorld(
+  worldRay: pc.Ray,
+  entityWorldTransform: pc.Mat4,
+  localPositions: Float32Array,
+  localIndices: Uint32Array
+): number | null {
+  const invMat = entityWorldTransform.clone().invert();
+  const localOrig = new pc.Vec3();
+  const worldEnd = new pc.Vec3(
+    worldRay.origin.x + worldRay.direction.x,
+    worldRay.origin.y + worldRay.direction.y,
+    worldRay.origin.z + worldRay.direction.z
+  );
+  const localEnd = new pc.Vec3();
+
+  invMat.transformPoint(worldRay.origin, localOrig);
+  invMat.transformPoint(worldEnd, localEnd);
+
+  const localDir = localEnd.sub(localOrig);
+  const dirLen = localDir.length();
+  if (dirLen < 1e-8) return null;
+  localDir.mulScalar(1 / dirLen);
+
+  const EPS = 1e-7;
+  let bestLocalT = Infinity;
+
+  const numTris = Math.floor(localIndices.length / 3);
+  for (let i = 0; i < numTris; i++) {
+    const i0 = localIndices[i * 3] * 3;
+    const i1 = localIndices[i * 3 + 1] * 3;
+    const i2 = localIndices[i * 3 + 2] * 3;
+
+    const v0x = localPositions[i0], v0y = localPositions[i0 + 1], v0z = localPositions[i0 + 2];
+    const e1x = localPositions[i1] - v0x;
+    const e1y = localPositions[i1 + 1] - v0y;
+    const e1z = localPositions[i1 + 2] - v0z;
+    const e2x = localPositions[i2] - v0x;
+    const e2y = localPositions[i2 + 1] - v0y;
+    const e2z = localPositions[i2 + 2] - v0z;
+
+    // h = localDir x e2
+    const hx = localDir.y * e2z - localDir.z * e2y;
+    const hy = localDir.z * e2x - localDir.x * e2z;
+    const hz = localDir.x * e2y - localDir.y * e2x;
+
+    const a = e1x * hx + e1y * hy + e1z * hz;
+    if (a > -EPS && a < EPS) continue;
+
+    const f = 1.0 / a;
+    const sx = localOrig.x - v0x;
+    const sy = localOrig.y - v0y;
+    const sz = localOrig.z - v0z;
+
+    const u = f * (sx * hx + sy * hy + sz * hz);
+    if (u < 0.0 || u > 1.0) continue;
+
+    // q = s x e1
+    const qx = sy * e1z - sz * e1y;
+    const qy = sz * e1x - sx * e1z;
+    const qz = sx * e1y - sy * e1x;
+
+    const v = f * (localDir.x * qx + localDir.y * qy + localDir.z * qz);
+    if (v < 0.0 || u + v > 1.0) continue;
+
+    const tLocal = f * (e2x * qx + e2y * qy + e2z * qz);
+    if (tLocal > EPS && tLocal < bestLocalT) {
+      bestLocalT = tLocal;
+    }
+  }
+
+  if (!Number.isFinite(bestLocalT)) return null;
+  // Convert local distance back to world-ray distance
+  return bestLocalT / dirLen;
+}
+
+/**
  * Computes combined world-space BoundingBox of all mesh instances under an entity.
  */
 export function computeEntityWorldAABB(entity: pc.Entity): pc.BoundingBox | null {

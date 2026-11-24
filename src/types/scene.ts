@@ -29,6 +29,19 @@ export interface MaterialConfig {
   plankVariation?: number; // 0 to 1
 }
 
+export interface GlbPartSelector {
+  /** Index of the MeshInstance primitive in deterministic traversal of the GLB container */
+  primIndex: number;
+  /** Connected-component triangle island indices within that primitive (omit for whole primitive) */
+  islandIndices?: number[];
+  /** Normalization scale applied to raw GLB coordinates */
+  normScale: number;
+  /** Normalization translation applied after scaling raw GLB coordinates */
+  normOffset: Vec3;
+  /** Local geometric center of this 3D part in normalized model space (pivot point) */
+  localCenter: Vec3;
+}
+
 export interface SceneEntityData {
   id: string;
   name: string;
@@ -45,7 +58,12 @@ export interface SceneEntityData {
   material: MaterialConfig;
   assetId?: string; // IndexedDB key for GLB binary
   assetFileName?: string; // Filename in projects/<name>/assets/
-  assetSourceUrl?: string; // Optional remote URL fallback
+  assetSourceUrl?: string; // Optional remote URL fallback (only public allowlisted HTTPS)
+  assetAuthor?: string; // Public author attribution for CC models
+  assetLicense?: string; // Public license label (e.g. CC-BY 4.0)
+  glbPart?: GlbPartSelector; // Specific 3D element / sub-mesh inside the GLB
+  groupId?: string; // Shared group ID for parts decomposed from the same imported GLB
+  groupName?: string; // Display name of the parent imported GLB model
   lightColor?: string;
   lightIntensity?: number;
 }

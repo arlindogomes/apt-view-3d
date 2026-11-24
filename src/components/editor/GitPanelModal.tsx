@@ -11,10 +11,17 @@ import {
   Plus,
   RefreshCw,
   ShieldAlert,
+  ShieldCheck,
+  Trash2,
   UploadCloud,
   X,
 } from 'lucide-react';
-import { GitHubSceneService, saveGitConfig } from '../../services/github';
+import {
+  clearSavedGitToken,
+  GitHubSceneService,
+  loadSavedGitConfig,
+  saveGitConfig,
+} from '../../services/github';
 import { useSceneStore } from '../../store/sceneStore';
 
 export const GitPanelModal: React.FC = () => {
@@ -30,6 +37,9 @@ export const GitPanelModal: React.FC = () => {
   const [owner, setOwner] = useState(git.owner);
   const [repo, setRepo] = useState(git.repo);
   const [token, setToken] = useState(git.token);
+  const [rememberToken, setRememberToken] = useState(
+    () => Boolean(loadSavedGitConfig().rememberToken)
+  );
   const [projectName, setLocalProjectName] = useState(git.projectName);
 
   const [showCreateBranch, setShowCreateBranch] = useState(false);
@@ -56,7 +66,7 @@ export const GitPanelModal: React.FC = () => {
     setBusy(true);
     updateGitState({ lastError: null, statusMessage: 'Conectando ao GitHub...' });
     try {
-      saveGitConfig({ owner, repo, token, projectName });
+      saveGitConfig({ owner, repo, token, projectName, rememberToken });
       setProjectName(projectName);
 
       const svc = createService();
@@ -322,14 +332,60 @@ export const GitPanelModal: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-gray-400 block mb-1">
-                  GitHub PAT (Contents + Pull Requests)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-gray-400">
+                    GitHub PAT (Fine-Grained: Contents + PRs)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <label
+                      className="flex items-center gap-1 text-[10px] text-gray-400 cursor-pointer"
+                      title="Por padrão o token fica apenas na sessão da aba atual (sessionStorage) para proteger seu domínio github.io."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={rememberToken}
+                        onChange={(e) => {
+                          setRememberToken(e.target.checked);
+                          saveGitConfig({
+                            owner,
+                            repo,
+                            token,
+                            projectName,
+                            rememberToken: e.target.checked,
+                          });
+                        }}
+                        className="accent-blue-500"
+                      />
+                      Lembrar
+                    </label>
+                    {token && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearSavedGitToken();
+                          setToken('');
+                          setRememberToken(false);
+                          updateGitState({
+                            connected: false,
+                            token: '',
+                            statusMessage: 'Token removido',
+                          });
+                          showToast('GitHub PAT removido do navegador.');
+                        }}
+                        title="Apagar token da sessão e do navegador"
+                        className="text-gray-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="password"
+                  autoComplete="off"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
-                  placeholder="github_pat_... ou ghp_..."
+                  placeholder="github_pat_... (restrito apenas a este repositório)"
                   className="w-full bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -342,6 +398,18 @@ export const GitPanelModal: React.FC = () => {
                   placeholder="planta-principal"
                   className="w-full bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-blue-500"
                 />
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/25 text-[11px] text-emerald-200 flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+              <div>
+                <strong>Segurança em Repositório Público:</strong> Seus tokens (GitHub e Sketchfab)
+                ficam isolados apenas na sessão da sua aba (<code>sessionStorage</code>) e passam
+                por um filtro anti-vazamento antes de cada commit. Recomendamos usar um{' '}
+                <strong>Fine-Grained Personal Access Token</strong> com acesso restrito{' '}
+                <em>somente a este repositório</em> (permissões: <code>Contents: Read &amp; Write</code>{' '}
+                e <code>Pull Requests: Read &amp; Write</code>).
               </div>
             </div>
 

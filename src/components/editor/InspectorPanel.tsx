@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  Boxes,
   Copy,
   Crosshair,
   Palette,
   PanelRightClose,
   Sliders,
   Trash2,
+  Ungroup,
 } from 'lucide-react';
 import { createDefaultMaterial, useSceneStore } from '../../store/sceneStore';
-import { MaterialPreset, Vec3 } from '../../types/scene';
+import { EntityCategory, MaterialPreset, Vec3 } from '../../types/scene';
 
 const PRESET_OPTIONS: Array<{ value: MaterialPreset; label: string }> = [
   { value: 'wall', label: 'Parede (Alvenaria/Gesso)' },
@@ -28,6 +30,10 @@ export const InspectorPanel: React.FC = () => {
   const deleteEntity = useSceneStore((s) => s.deleteEntity);
   const triggerFocusSelected = useSceneStore((s) => s.triggerFocusSelected);
   const toggleInspector = useSceneStore((s) => s.toggleInspector);
+  const groupTransformMode = useSceneStore((s) => s.groupTransformMode);
+  const setGroupTransformMode = useSceneStore((s) => s.setGroupTransformMode);
+  const splitGlbEntity = useSceneStore((s) => s.splitGlbEntity);
+  const [splitting, setSplitting] = useState(false);
 
   const entity = entities.find((e) => e.id === selectedId) || null;
 
@@ -133,6 +139,20 @@ export const InspectorPanel: React.FC = () => {
             </span>
           </div>
           <div>
+            <label className="text-[11px] text-gray-400 block mb-1">Categoria na Hierarquia</label>
+            <select
+              value={entity.category}
+              onChange={(e) =>
+                updateEntityProps(entity.id, { category: e.target.value as EntityCategory })
+              }
+              className="w-full bg-[#0f1117] border border-[#2a3040] rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+            >
+              <option value="structure">Estruturas (Parede / Porta / Janela / Piso)</option>
+              <option value="furniture">Móveis / Objetos</option>
+              <option value="lighting">Iluminação</option>
+            </select>
+          </div>
+          <div>
             <label className="text-[11px] text-gray-400 block mb-1">Tags (separadas por vírgula)</label>
             <input
               type="text"
@@ -149,6 +169,77 @@ export const InspectorPanel: React.FC = () => {
             />
           </div>
         </section>
+
+        {/* GLB Sub-Element & Multi-Part Assembly Controls */}
+        {entity.kind === 'glb' && (
+          <section className="pt-3 border-t border-[#2a3040] space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <Ungroup className="w-3.5 h-3.5" />
+                Elementos 3D do GLB
+              </span>
+              {entity.glbPart && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-mono">
+                  Malha #{entity.glbPart.primIndex + 1}
+                </span>
+              )}
+            </div>
+
+            {entity.groupId && (
+              <div className="p-2 rounded bg-[#0f1117] border border-[#2a3040] space-y-2">
+                <div className="text-[11px] text-gray-300 truncate">
+                  Conjunto: <strong className="text-white">{entity.groupName || 'Modelo GLB'}</strong>
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setGroupTransformMode(false)}
+                    className={`py-1.5 px-2 rounded text-[11px] font-medium border flex items-center justify-center gap-1 ${
+                      !groupTransformMode
+                        ? 'bg-blue-600 border-blue-500 text-white'
+                        : 'bg-[#161922] border-[#2a3040] text-gray-300 hover:text-white'
+                    }`}
+                    title="Mover, rotacionar e escalar apenas esta peça (ex: uma janela, porta ou parede individual)"
+                  >
+                    <Ungroup className="w-3 h-3" />
+                    Peça Individual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGroupTransformMode(true)}
+                    className={`py-1.5 px-2 rounded text-[11px] font-medium border flex items-center justify-center gap-1 ${
+                      groupTransformMode
+                        ? 'bg-cyan-600 border-cyan-500 text-white'
+                        : 'bg-[#161922] border-[#2a3040] text-gray-300 hover:text-white'
+                    }`}
+                    title="Mover todas as peças deste modelo GLB juntas mantendo o alinhamento"
+                  >
+                    <Boxes className="w-3 h-3" />
+                    Mover Conjunto
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={splitting}
+              onClick={async () => {
+                setSplitting(true);
+                try {
+                  await splitGlbEntity(entity.id, 'fine');
+                } finally {
+                  setSplitting(false);
+                }
+              }}
+              className="w-full py-1.5 px-2.5 rounded bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/40 text-cyan-200 text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-50"
+              title="Separa sub-malhas e ilhas 3D desconectadas dentro desta peça em objetos independentes com pivôs próprios"
+            >
+              <Ungroup className="w-3.5 h-3.5 text-cyan-400" />
+              {splitting ? 'Analisando Malha 3D...' : 'Desmembrar Sub-Partes / Ilhas 3D'}
+            </button>
+          </section>
+        )}
 
         {/* Transform */}
         <section className="pt-3 border-t border-[#2a3040] space-y-2.5">

@@ -4,3 +4,7 @@ dist
 *.local
 .env
 .env.*
+*.pem
+*.key
+*secret*
+*token*

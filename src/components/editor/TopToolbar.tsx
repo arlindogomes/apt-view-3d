@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 import { getHdriPresetMeta, HDRI_PRESETS } from '../../materials/HdriEnvironmentFactory';
 import { saveGlbAsset } from '../../services/assetDb';
-import { createDefaultMaterial, useSceneStore } from '../../store/sceneStore';
+import { sanitizeGlbFileName } from '../../services/security';
+import { useSceneStore } from '../../store/sceneStore';
 
 export const TopToolbar: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -50,7 +51,7 @@ export const TopToolbar: React.FC = () => {
   const undo = useSceneStore((s) => s.undo);
   const redo = useSceneStore((s) => s.redo);
   const addPrimitive = useSceneStore((s) => s.addPrimitive);
-  const addEntity = useSceneStore((s) => s.addEntity);
+  const importGlbAsset = useSceneStore((s) => s.importGlbAsset);
   const setSketchfabOpen = useSceneStore((s) => s.setSketchfabOpen);
   const setGitModalOpen = useSceneStore((s) => s.setGitModalOpen);
   const isInspectorVisible = useSceneStore((s) => s.isInspectorVisible);
@@ -66,22 +67,15 @@ export const TopToolbar: React.FC = () => {
     try {
       const buffer = await file.arrayBuffer();
       const assetId = `glb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-      await saveGlbAsset(assetId, file.name, buffer);
-      addEntity({
-        name: file.name.replace(/\.(glb|gltf)$/i, ''),
-        category: 'furniture',
-        kind: 'glb',
-        tags: ['glb', 'importado'],
-        visible: true,
-        locked: false,
-        position: [0, 0.1, 0],
-        rotation: [0, 0, 0],
-        scale: [1, 1, 1],
-        material: createDefaultMaterial('original'),
+      const safeFileName = sanitizeGlbFileName(file.name, assetId);
+      const modelName = file.name.replace(/\.(glb|gltf)$/i, '');
+      await saveGlbAsset(assetId, safeFileName, buffer);
+      await importGlbAsset({
         assetId,
-        assetFileName: file.name,
+        fileName: safeFileName,
+        modelName,
+        decompose: true,
       });
-      showToast(`Arquivo "${file.name}" importado para a cena!`);
     } catch {
       showToast('Erro ao importar arquivo GLB.');
     } finally {

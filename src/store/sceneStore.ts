@@ -287,6 +287,7 @@ interface SceneStoreState {
   isSketchfabOpen: boolean;
   isGitModalOpen: boolean;
   isInspectorVisible: boolean;
+  groupTransformMode: boolean;
   envIntensity: number;
   toastMessage: string | null;
   wallPreviewLength: number | null;
@@ -298,6 +299,20 @@ interface SceneStoreState {
   // Engine callbacks (registered by PlayCanvasViewport)
   focusSelectedCallback: (() => void) | null;
   screenshotCallback: (() => void) | null;
+  importGlbCallback:
+    | ((params: {
+        assetId: string;
+        fileName: string;
+        modelName: string;
+        sourceUrl?: string;
+        author?: string;
+        license?: string;
+        decompose?: boolean;
+      }) => Promise<void>)
+    | null;
+  splitGlbEntityCallback:
+    | ((entityId: string, granularity: 'smart' | 'fine') => Promise<void>)
+    | null;
 
   // Actions
   setProjectName: (name: string) => void;
@@ -315,15 +330,38 @@ interface SceneStoreState {
   setGitModalOpen: (open: boolean) => void;
   setInspectorVisible: (visible: boolean) => void;
   toggleInspector: () => void;
+  setGroupTransformMode: (enabled: boolean) => void;
   setEnvIntensity: (intensity: number) => void;
   showToast: (msg: string) => void;
 
   registerEngineCallbacks: (
     focusCb: (() => void) | null,
-    screenshotCb: (() => void) | null
+    screenshotCb: (() => void) | null,
+    importGlbCb?:
+      | ((params: {
+          assetId: string;
+          fileName: string;
+          modelName: string;
+          sourceUrl?: string;
+          author?: string;
+          license?: string;
+          decompose?: boolean;
+        }) => Promise<void>)
+      | null,
+    splitGlbCb?: ((entityId: string, granularity: 'smart' | 'fine') => Promise<void>) | null
   ) => void;
   triggerFocusSelected: () => void;
   triggerScreenshot: () => void;
+  importGlbAsset: (params: {
+    assetId: string;
+    fileName: string;
+    modelName: string;
+    sourceUrl?: string;
+    author?: string;
+    license?: string;
+    decompose?: boolean;
+  }) => Promise<void>;
+  splitGlbEntity: (entityId: string, granularity?: 'smart' | 'fine') => Promise<void>;
 
   // Command-backed CRUD
   executeCommand: (cmd: SceneCommand) => void;
@@ -331,9 +369,24 @@ interface SceneStoreState {
   redo: () => void;
 
   addEntity: (entity: Omit<SceneEntityData, 'id'> & { id?: string }) => SceneEntityData;
+  addEntitiesBatch: (
+    entityInputs: Array<Omit<SceneEntityData, 'id'> & { id?: string }>,
+    label?: string
+  ) => SceneEntityData[];
+  replaceEntityWithEntities: (
+    targetId: string,
+    replacementInputs: Array<Omit<SceneEntityData, 'id'> & { id?: string }>,
+    label?: string
+  ) => SceneEntityData[];
   addPrimitive: (kind: EntityKind) => SceneEntityData;
   deleteEntity: (id: string) => void;
   duplicateEntity: (id: string) => SceneEntityData | null;
+
+  // Group operations for multi-part GLB assemblies
+  setGroupVisibility: (groupId: string, visible: boolean) => void;
+  setGroupLocked: (groupId: string, locked: boolean) => void;
+  deleteGroup: (groupId: string) => void;
+  commitGroupTranslation: (groupId: string, delta: Vec3) => void;
 
   updateEntityDirect: (id: string, patch: Partial<SceneEntityData>) => void;
   commitEntityTransform: (
@@ -377,6 +430,7 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   isSketchfabOpen: false,
   isGitModalOpen: false,
   isInspectorVisible: true,
+  groupTransformMode: false,
   envIntensity: 1.0,
   toastMessage: null,
   wallPreviewLength: null,
@@ -401,6 +455,8 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
 
   focusSelectedCallback: null,
   screenshotCallback: null,
+  importGlbCallback: null,
+  splitGlbEntityCallback: null,
 
   setProjectName: (name) => {
     set({ projectName: name });
@@ -433,6 +489,7 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
   setGitModalOpen: (open) => set({ isGitModalOpen: open }),
   setInspectorVisible: (visible) => set({ isInspectorVisible: visible }),
   toggleInspector: () => set((s) => ({ isInspectorVisible: !s.isInspectorVisible })),
+  setGroupTransformMode: (enabled) => set({ groupTransformMode: enabled }),
   setEnvIntensity: (intensity) => set({ envIntensity: intensity }),
 
   showToast: (msg) => {
@@ -444,8 +501,13 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
     }, 3500);
   },
 
-  registerEngineCallbacks: (focusCb, screenshotCb) =>
-    set({ focusSelectedCallback: focusCb, screenshotCallback: screenshotCb }),
+  registerEngineCallbacks: (focusCb, screenshotCb, importGlbCb = null, splitGlbCb = null) =>
+    set({
+      focusSelectedCallback: focusCb,
+      screenshotCallback: screenshotCb,
+      importGlbCallback: importGlbCb,
+      splitGlbEntityCallback: splitGlbCb,
+    }),
 
   triggerFocusSelected: () => {
     get().focusSelectedCallback?.();
@@ -453,6 +515,39 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
 
   triggerScreenshot: () => {
     get().screenshotCallback?.();
+  },
+
+  importGlbAsset: async (params) => {
+    const cb = get().importGlbCallback;
+    if (cb) {
+      await cb(params);
+    } else {
+      // Fallback if engine isn't mounted yet
+      get().addEntity({
+        name: params.modelName,
+        category: 'furniture',
+        kind: 'glb',
+        tags: ['glb', '3d'],
+        visible: true,
+        locked: false,
+        position: [0, 0.1, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        material: createDefaultMaterial('original'),
+        assetId: params.assetId,
+        assetFileName: params.fileName,
+        assetSourceUrl: params.sourceUrl,
+        assetAuthor: params.author,
+        assetLicense: params.license,
+      });
+    }
+  },
+
+  splitGlbEntity: async (entityId, granularity = 'fine') => {
+    const cb = get().splitGlbEntityCallback;
+    if (cb) {
+      await cb(entityId, granularity);
+    }
   },
 
   executeCommand: (cmd) => {
@@ -513,6 +608,72 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
         })),
     });
     return entity;
+  },
+
+  addEntitiesBatch: (entityInputs, label = 'Importar elementos 3D') => {
+    if (entityInputs.length === 0) return [];
+    const created: SceneEntityData[] = entityInputs.map((inp) => ({
+      ...inp,
+      id: inp.id || generateId(inp.kind),
+    }));
+    const createdIds = new Set(created.map((e) => e.id));
+    const prevSelected = get().selectedId;
+
+    get().executeCommand({
+      label,
+      execute: () =>
+        set((s) => ({
+          entities: [...s.entities, ...created],
+          selectedId: created[0].id,
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.filter((e) => !createdIds.has(e.id)),
+          selectedId: prevSelected,
+        })),
+    });
+    return created;
+  },
+
+  replaceEntityWithEntities: (targetId, replacementInputs, label = 'Separar elementos 3D') => {
+    const prevEntities = get().entities;
+    const targetIdx = prevEntities.findIndex((e) => e.id === targetId);
+    if (targetIdx === -1 || replacementInputs.length === 0) return [];
+
+    const targetEntity = prevEntities[targetIdx];
+    const created: SceneEntityData[] = replacementInputs.map((inp) => ({
+      ...inp,
+      id: inp.id || generateId(inp.kind),
+    }));
+    const createdIds = new Set(created.map((e) => e.id));
+    const prevSelected = get().selectedId;
+
+    get().executeCommand({
+      label,
+      execute: () =>
+        set((s) => {
+          const idx = s.entities.findIndex((e) => e.id === targetId);
+          if (idx === -1) return s;
+          const next = [...s.entities];
+          next.splice(idx, 1, ...created);
+          return {
+            entities: next,
+            selectedId: created[0].id,
+          };
+        }),
+      undo: () =>
+        set((s) => {
+          const firstIdx = s.entities.findIndex((e) => createdIds.has(e.id));
+          const filtered = s.entities.filter((e) => !createdIds.has(e.id));
+          const insertAt = firstIdx >= 0 ? Math.min(firstIdx, filtered.length) : filtered.length;
+          filtered.splice(insertAt, 0, targetEntity);
+          return {
+            entities: filtered,
+            selectedId: prevSelected,
+          };
+        }),
+    });
+    return created;
   },
 
   addPrimitive: (kind) => {
@@ -630,6 +791,116 @@ export const useSceneStore = create<SceneStoreState>((set, get) => ({
       position: [target.position[0] + 0.5, target.position[1], target.position[2] + 0.5],
     };
     return get().addEntity(clone);
+  },
+
+  setGroupVisibility: (groupId, visible) => {
+    const prevVis = new Map<string, boolean>();
+    for (const e of get().entities) {
+      if (e.groupId === groupId) prevVis.set(e.id, e.visible);
+    }
+    if (prevVis.size === 0) return;
+
+    get().executeCommand({
+      label: `${visible ? 'Exibir' : 'Ocultar'} grupo 3D`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.map((e) => (e.groupId === groupId ? { ...e, visible } : e)),
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.map((e) =>
+            prevVis.has(e.id) ? { ...e, visible: prevVis.get(e.id)! } : e
+          ),
+        })),
+    });
+  },
+
+  setGroupLocked: (groupId, locked) => {
+    const prevLock = new Map<string, boolean>();
+    for (const e of get().entities) {
+      if (e.groupId === groupId) prevLock.set(e.id, e.locked);
+    }
+    if (prevLock.size === 0) return;
+
+    get().executeCommand({
+      label: `${locked ? 'Bloquear' : 'Desbloquear'} grupo 3D`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.map((e) => (e.groupId === groupId ? { ...e, locked } : e)),
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.map((e) =>
+            prevLock.has(e.id) ? { ...e, locked: prevLock.get(e.id)! } : e
+          ),
+        })),
+    });
+  },
+
+  deleteGroup: (groupId) => {
+    const snapshot = [...get().entities];
+    const toRemove = snapshot.filter((e) => e.groupId === groupId && !e.locked);
+    if (toRemove.length === 0) return;
+    const removeIds = new Set(toRemove.map((e) => e.id));
+    const prevSelected = get().selectedId;
+
+    get().executeCommand({
+      label: `Excluir conjunto (${toRemove.length} partes)`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.filter((e) => !removeIds.has(e.id)),
+          selectedId: s.selectedId && removeIds.has(s.selectedId) ? null : s.selectedId,
+        })),
+      undo: () =>
+        set({
+          entities: snapshot,
+          selectedId: prevSelected,
+        }),
+    });
+  },
+
+  commitGroupTranslation: (groupId, delta) => {
+    if (Math.hypot(delta[0], delta[1], delta[2]) < 1e-4) return;
+    const affectedIds = new Set(
+      get()
+        .entities.filter((e) => e.groupId === groupId && !e.locked)
+        .map((e) => e.id)
+    );
+    if (affectedIds.size === 0) return;
+
+    get().executeCommand({
+      label: `Mover conjunto (${affectedIds.size} elementos)`,
+      execute: () =>
+        set((s) => ({
+          entities: s.entities.map((e) =>
+            affectedIds.has(e.id)
+              ? {
+                  ...e,
+                  position: [
+                    Number((e.position[0] + delta[0]).toFixed(4)),
+                    Number((e.position[1] + delta[1]).toFixed(4)),
+                    Number((e.position[2] + delta[2]).toFixed(4)),
+                  ],
+                }
+              : e
+          ),
+        })),
+      undo: () =>
+        set((s) => ({
+          entities: s.entities.map((e) =>
+            affectedIds.has(e.id)
+              ? {
+                  ...e,
+                  position: [
+                    Number((e.position[0] - delta[0]).toFixed(4)),
+                    Number((e.position[1] - delta[1]).toFixed(4)),
+                    Number((e.position[2] - delta[2]).toFixed(4)),
+                  ],
+                }
+              : e
+          ),
+        })),
+    });
   },
 
   updateEntityDirect: (id, patch) => {

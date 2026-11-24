@@ -6,27 +6,35 @@ import {
   Loader2,
   Package,
   Search,
+  ShieldCheck,
+  Trash2,
+  Ungroup,
   X,
 } from 'lucide-react';
 import { saveGlbAsset } from '../../services/assetDb';
+import { sanitizePublicAssetUrl } from '../../services/security';
 import {
   CatalogModelItem,
+  clearSketchfabToken,
   downloadDirectGlb,
   downloadSketchfabGlb,
   FREE_KHRONOS_CATALOG,
   getSketchfabToken,
+  isSketchfabTokenPersisted,
   searchSketchfabModels,
   setSketchfabToken,
 } from '../../services/sketchfab';
-import { createDefaultMaterial, useSceneStore } from '../../store/sceneStore';
+import { useSceneStore } from '../../store/sceneStore';
 
 export const SketchfabModal: React.FC = () => {
   const isOpen = useSceneStore((s) => s.isSketchfabOpen);
   const setOpen = useSceneStore((s) => s.setSketchfabOpen);
-  const addEntity = useSceneStore((s) => s.addEntity);
+  const importGlbAsset = useSceneStore((s) => s.importGlbAsset);
   const showToast = useSceneStore((s) => s.showToast);
 
   const [token, setTokenState] = useState(getSketchfabToken);
+  const [rememberToken, setRememberToken] = useState(isSketchfabTokenPersisted);
+  const [decomposeOnImport, setDecomposeOnImport] = useState(true);
   const [tab, setTab] = useState<'free' | 'sketchfab'>(
     getSketchfabToken() ? 'sketchfab' : 'free'
   );
@@ -38,9 +46,17 @@ export const SketchfabModal: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const handleSaveToken = (val: string) => {
+  const handleSaveToken = (val: string, persist = rememberToken) => {
     setTokenState(val);
-    setSketchfabToken(val);
+    setRememberToken(persist);
+    setSketchfabToken(val, persist);
+  };
+
+  const handleClearToken = () => {
+    clearSketchfabToken();
+    setTokenState('');
+    setRememberToken(false);
+    showToast('Token do Sketchfab removido do navegador.');
   };
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -72,23 +88,19 @@ export const SketchfabModal: React.FC = () => {
       const assetId = `glb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
       await saveGlbAsset(assetId, fileName, buffer);
 
-      addEntity({
-        name: item.name,
-        category: 'furniture',
-        kind: 'glb',
-        tags: [item.source, '3d'],
-        visible: true,
-        locked: false,
-        position: [0, 0.1, 0],
-        rotation: [0, 0, 0],
-        scale: [1, 1, 1],
-        material: createDefaultMaterial('original'),
+      // Notice: Only public allowlisted URLs (like Khronos) are saved in assetSourceUrl;
+      // Sketchfab temporary signed S3 URLs and API tokens are NEVER stored in the entity or scene.json.
+      await importGlbAsset({
         assetId,
-        assetFileName: fileName,
-        assetSourceUrl: item.directGlbUrl,
+        fileName,
+        modelName: item.name,
+        sourceUrl:
+          item.source === 'khronos' ? sanitizePublicAssetUrl(item.directGlbUrl) : undefined,
+        author: item.author,
+        license: item.license,
+        decompose: decomposeOnImport,
       });
 
-      showToast(`"${item.name}" importado para a cena!`);
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao importar modelo GLB.');
@@ -145,16 +157,60 @@ export const SketchfabModal: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <KeyRound className="w-3.5 h-3.5 text-amber-400" />
             <input
               type="password"
-              placeholder="Sketchfab Personal API Token (localStorage)"
+              autoComplete="off"
+              placeholder="Sketchfab API Token (apenas sessão)"
               value={token}
-              onChange={(e) => handleSaveToken(e.target.value)}
-              className="w-64 bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              onChange={(e) => handleSaveToken(e.target.value, rememberToken)}
+              className="w-56 bg-[#161922] border border-[#2a3040] rounded px-2.5 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
             />
+            <label
+              className="flex items-center gap-1 text-[11px] text-gray-400 cursor-pointer select-none"
+              title="Desmarcado (recomendado): o token fica apenas na memória da aba atual (sessionStorage) e nunca é compartilhado com outros projetos no domínio github.io."
+            >
+              <input
+                type="checkbox"
+                checked={rememberToken}
+                onChange={(e) => handleSaveToken(token, e.target.checked)}
+                className="accent-blue-500"
+              />
+              Lembrar
+            </label>
+            {token && (
+              <button
+                type="button"
+                onClick={handleClearToken}
+                title="Remover token do navegador"
+                className="p-1 rounded bg-[#1d212d] hover:bg-red-500/20 text-gray-400 hover:text-red-300 border border-[#2a3040]"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Security & 3D Element Separation Bar */}
+        <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-300">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            <span>
+              <strong>Proteção GitHub Público:</strong> Token isolado em{' '}
+              <code>sessionStorage</code> (nunca salvo em <code>scene.json</code>).
+            </span>
+          </div>
+          <label className="flex items-center gap-1.5 text-cyan-200 font-medium cursor-pointer select-none bg-[#161922]/80 px-2.5 py-1 rounded border border-cyan-500/30">
+            <input
+              type="checkbox"
+              checked={decomposeOnImport}
+              onChange={(e) => setDecomposeOnImport(e.target.checked)}
+              className="accent-cyan-500"
+            />
+            <Ungroup className="w-3.5 h-3.5 text-cyan-400" />
+            Separar elementos 3D internos (janelas, portas, paredes, sub-malhas)
+          </label>
         </div>
 
         {/* Search bar for Sketchfab tab */}
@@ -226,6 +282,7 @@ export const SketchfabModal: React.FC = () => {
                           alt={item.name}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          referrerPolicy="no-referrer"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">

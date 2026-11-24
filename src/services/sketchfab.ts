@@ -1,4 +1,8 @@
-const TOKEN_STORAGE_KEY = 'apt_view_sketchfab_token';
+import { sanitizeGlbFileName } from './security';
+
+const TOKEN_SESSION_KEY = 'apt_view_sketchfab_token_session';
+const TOKEN_PERSIST_KEY = 'apt_view_sketchfab_token';
+const TOKEN_REMEMBER_FLAG = 'apt_view_sketchfab_remember';
 
 export interface CatalogModelItem {
   uid: string;
@@ -80,25 +84,60 @@ export const FREE_KHRONOS_CATALOG: CatalogModelItem[] = [
   },
 ];
 
+export function isSketchfabTokenPersisted(): boolean {
+  try {
+    return localStorage.getItem(TOKEN_REMEMBER_FLAG) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function getSketchfabToken(): string {
   try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+    const sessionToken = sessionStorage.getItem(TOKEN_SESSION_KEY);
+    if (sessionToken) return sessionToken;
+
+    const remember = isSketchfabTokenPersisted();
+    const persistedToken = localStorage.getItem(TOKEN_PERSIST_KEY) || '';
+    if (persistedToken && !remember) {
+      // Migrate legacy plaintext token out of shared localStorage into tab-scoped sessionStorage
+      sessionStorage.setItem(TOKEN_SESSION_KEY, persistedToken);
+      localStorage.removeItem(TOKEN_PERSIST_KEY);
+      return persistedToken;
+    }
+    return remember ? persistedToken : '';
   } catch {
     return '';
   }
 }
 
-export function setSketchfabToken(token: string): void {
+export function setSketchfabToken(token: string, persistInLocalStorage = false): void {
   try {
     const trimmed = token.trim();
-    if (trimmed) {
-      localStorage.setItem(TOKEN_STORAGE_KEY, trimmed);
+    if (!trimmed) {
+      sessionStorage.removeItem(TOKEN_SESSION_KEY);
+      localStorage.removeItem(TOKEN_PERSIST_KEY);
+      localStorage.removeItem(TOKEN_REMEMBER_FLAG);
+      return;
+    }
+
+    // Always keep in sessionStorage for current tab
+    sessionStorage.setItem(TOKEN_SESSION_KEY, trimmed);
+
+    if (persistInLocalStorage) {
+      localStorage.setItem(TOKEN_REMEMBER_FLAG, 'true');
+      localStorage.setItem(TOKEN_PERSIST_KEY, trimmed);
     } else {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_REMEMBER_FLAG);
+      localStorage.removeItem(TOKEN_PERSIST_KEY);
     }
   } catch {
     // ignore storage errors
   }
+}
+
+export function clearSketchfabToken(): void {
+  setSketchfabToken('', false);
 }
 
 interface SketchfabSearchModel {
@@ -126,7 +165,10 @@ export async function searchSketchfabModels(
     headers['Authorization'] = `Token ${token.trim()}`;
   }
 
-  const res = await fetch(url.toString(), { headers });
+  const res = await fetch(url.toString(), {
+    headers,
+    referrerPolicy: 'no-referrer',
+  });
   if (!res.ok) {
     throw new Error(`Sketchfab API retornou status ${res.status}`);
   }
@@ -158,10 +200,12 @@ export async function downloadSketchfabGlb(
     throw new Error('Informe seu Sketchfab Personal API Token para baixar modelos do Sketchfab.');
   }
 
-  const res = await fetch(`https://api.sketchfab.com/v3/models/${uid}/download`, {
+  const safeUid = uid.replace(/[^a-zA-Z0-9_-]/g, '');
+  const res = await fetch(`https://api.sketchfab.com/v3/models/${safeUid}/download`, {
     headers: {
       Authorization: `Token ${token.trim()}`,
     },
+    referrerPolicy: 'no-referrer',
   });
 
   if (!res.ok) {
@@ -176,6 +220,7 @@ export async function downloadSketchfabGlb(
     gltf?: { url: string; size?: number };
   };
 
+  // Temporary pre-signed S3 URL is used only in memory to fetch the binary and is NEVER saved to scene.json
   const downloadUrl = data.glb?.url;
   if (!downloadUrl) {
     throw new Error(
@@ -183,24 +228,23 @@ export async function downloadSketchfabGlb(
     );
   }
 
-  const fileRes = await fetch(downloadUrl);
+  const fileRes = await fetch(downloadUrl, { referrerPolicy: 'no-referrer' });
   if (!fileRes.ok) {
     throw new Error(`Falha ao baixar arquivo GLB (${fileRes.status}).`);
   }
 
   const buffer = await fileRes.arrayBuffer();
-  return { buffer, fileName: `sketchfab_${uid}.glb` };
+  return { buffer, fileName: sanitizeGlbFileName(`sketchfab_${safeUid}.glb`) };
 }
 
 export async function downloadDirectGlb(
   url: string,
   fallbackName: string
 ): Promise<{ buffer: ArrayBuffer; fileName: string }> {
-  const res = await fetch(url);
+  const res = await fetch(url, { referrerPolicy: 'no-referrer' });
   if (!res.ok) {
     throw new Error(`Erro ao baixar modelo (${res.status}): ${url}`);
   }
   const buffer = await res.arrayBuffer();
-  const cleanName = fallbackName.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  return { buffer, fileName: `${cleanName}.glb` };
+  return { buffer, fileName: sanitizeGlbFileName(`${fallbackName}.glb`) };
 }

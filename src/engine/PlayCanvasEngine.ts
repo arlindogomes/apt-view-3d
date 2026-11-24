@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import { getHdriPresetMeta, HdriEnvironmentFactory } from '../materials/HdriEnvironmentFactory';
 import { ProceduralMaterialFactory } from '../materials/ProceduralMaterialFactory';
 import { getGlbAsset, saveGlbAsset } from '../services/assetDb';
+import { sanitizeGlbFileName, sanitizePublicAssetUrl } from '../services/security';
 import { createDefaultMaterial, useSceneStore } from '../store/sceneStore';
 import {
   CameraMode,
@@ -18,7 +19,15 @@ import {
   createPolygonSlabMesh,
   intersectRayAABB,
   intersectRayPlaneY,
+  intersectRayTriangleMeshWorld,
 } from './GeometryUtils';
+import {
+  buildCenteredMeshForGlbPart,
+  buildDecomposedPartDescriptors,
+  descriptorsToEntityInputs,
+  ParsedGlbAssetCache,
+  parseGlbContainerPrimitives,
+} from './GlbDecomposer';
 
 interface ManagedEntityRecord {
   data: SceneEntityData;
@@ -26,6 +35,8 @@ interface ManagedEntityRecord {
   materialKey: string;
   meshSignature: string;
   originalMaterials?: Map<pc.MeshInstance, pc.Material>;
+  localPositions?: Float32Array;
+  localIndices?: Uint32Array;
 }
 
 export class PlayCanvasEngine {
@@ -57,6 +68,8 @@ export class PlayCanvasEngine {
 
   private records = new Map<string, ManagedEntityRecord>();
   private loadingGlbIds = new Set<string>();
+  private parsedGlbCache = new Map<string, Promise<ParsedGlbAssetCache | null>>();
+  private groupDragPeerStartPositions = new Map<string, Vec3>();
   private selectedId: string | null = null;
   private toolMode: ToolMode = 'select';
   private snap: SnapConfig = {
@@ -215,12 +228,14 @@ export class PlayCanvasEngine {
       }
     });
 
-    // Register callbacks for Focus (F) and Screenshot
+    // Register callbacks for Focus (F), Screenshot, and 3D GLB Sub-Element Decomposition
     useSceneStore
       .getState()
       .registerEngineCallbacks(
         () => this.focusOnSelected(),
-        () => this.captureScreenshot()
+        () => this.captureScreenshot(),
+        (params) => this.importAndDecomposeGlb(params),
+        (entityId, granularity) => this.splitExistingGlbEntity(entityId, granularity)
       );
 
     // Pointer & keyboard handlers for selection & parametric drawing
@@ -246,6 +261,7 @@ export class PlayCanvasEngine {
       gizmo.on(pc.TransformGizmo.EVENT_TRANSFORMSTART, () => {
         this.isGizmoDragging = true;
         this.cameraController.setSuppressed(true);
+        this.groupDragPeerStartPositions.clear();
         if (this.selectedId) {
           const rec = this.records.get(this.selectedId);
           if (rec) {
@@ -255,6 +271,20 @@ export class PlayCanvasEngine {
               rotation: [...rec.data.rotation] as Vec3,
               scale: [...rec.data.scale] as Vec3,
             };
+            const store = useSceneStore.getState();
+            if (store.groupTransformMode && rec.data.groupId) {
+              for (const [peerId, peerRec] of this.records.entries()) {
+                if (
+                  peerId !== this.selectedId &&
+                  peerRec.data.groupId === rec.data.groupId &&
+                  !peerRec.data.locked
+                ) {
+                  this.groupDragPeerStartPositions.set(peerId, [
+                    ...peerRec.data.position,
+                  ] as Vec3);
+                }
+              }
+            }
           }
         }
       });
@@ -278,6 +308,28 @@ export class PlayCanvasEngine {
           rotation: [rot.x, rot.y, rot.z],
           scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
         });
+
+        // If groupTransformMode is active on a multi-part GLB group, move peer elements along
+        if (
+          this.activeGizmoMode === 'translate' &&
+          this.transformStartSnapshot &&
+          this.groupDragPeerStartPositions.size > 0
+        ) {
+          const dx = pos.x - this.transformStartSnapshot.position[0];
+          const dy = pos.y - this.transformStartSnapshot.position[1];
+          const dz = pos.z - this.transformStartSnapshot.position[2];
+          for (const [peerId, startPos] of this.groupDragPeerStartPositions.entries()) {
+            const peerRec = this.records.get(peerId);
+            if (!peerRec) continue;
+            const nx = startPos[0] + dx;
+            const ny = startPos[1] + dy;
+            const nz = startPos[2] + dz;
+            peerRec.entity.setLocalPosition(nx, ny, nz);
+            useSceneStore.getState().updateEntityDirect(peerId, {
+              position: [nx, ny, nz],
+            });
+          }
+        }
       });
 
       gizmo.on(pc.TransformGizmo.EVENT_TRANSFORMEND, () => {
@@ -293,21 +345,52 @@ export class PlayCanvasEngine {
             const pos = rec.entity.getLocalPosition();
             const rot = rec.entity.getLocalEulerAngles();
             const scl = rec.entity.getLocalScale();
-            useSceneStore.getState().commitEntityTransform(
-              this.transformStartSnapshot.id,
-              {
-                position: this.transformStartSnapshot.position,
-                rotation: this.transformStartSnapshot.rotation,
-                scale: this.transformStartSnapshot.scale,
-              },
-              {
-                position: [pos.x, pos.y, pos.z],
-                rotation: [rot.x, rot.y, rot.z],
-                scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
+
+            if (
+              this.activeGizmoMode === 'translate' &&
+              rec.data.groupId &&
+              this.groupDragPeerStartPositions.size > 0
+            ) {
+              const dx = pos.x - this.transformStartSnapshot.position[0];
+              const dy = pos.y - this.transformStartSnapshot.position[1];
+              const dz = pos.z - this.transformStartSnapshot.position[2];
+              // Restore pre-drag positions then commit atomic group translation for undo/redo
+              rec.entity.setLocalPosition(
+                this.transformStartSnapshot.position[0],
+                this.transformStartSnapshot.position[1],
+                this.transformStartSnapshot.position[2]
+              );
+              useSceneStore.getState().updateEntityDirect(rec.data.id, {
+                position: [...this.transformStartSnapshot.position] as Vec3,
+              });
+              for (const [peerId, startPos] of this.groupDragPeerStartPositions.entries()) {
+                const peerRec = this.records.get(peerId);
+                if (peerRec) {
+                  peerRec.entity.setLocalPosition(startPos[0], startPos[1], startPos[2]);
+                  useSceneStore.getState().updateEntityDirect(peerId, {
+                    position: [...startPos] as Vec3,
+                  });
+                }
               }
-            );
+              useSceneStore.getState().commitGroupTranslation(rec.data.groupId, [dx, dy, dz]);
+            } else {
+              useSceneStore.getState().commitEntityTransform(
+                this.transformStartSnapshot.id,
+                {
+                  position: this.transformStartSnapshot.position,
+                  rotation: this.transformStartSnapshot.rotation,
+                  scale: this.transformStartSnapshot.scale,
+                },
+                {
+                  position: [pos.x, pos.y, pos.z],
+                  rotation: [rot.x, rot.y, rot.z],
+                  scale: [Math.max(0.02, scl.x), Math.max(0.02, scl.y), Math.max(0.02, scl.z)],
+                }
+              );
+            }
           }
           this.transformStartSnapshot = null;
+          this.groupDragPeerStartPositions.clear();
         }
       });
     });
@@ -616,103 +699,342 @@ export class PlayCanvasEngine {
     }
   }
 
+  private getOrLoadParsedGlb(
+    assetId: string,
+    hintName = '',
+    sourceUrl?: string
+  ): Promise<ParsedGlbAssetCache | null> {
+    const existing = this.parsedGlbCache.get(assetId);
+    if (existing) return existing;
+
+    const promise = (async (): Promise<ParsedGlbAssetCache | null> => {
+      try {
+        let stored = await getGlbAsset(assetId);
+        const safeSourceUrl = sanitizePublicAssetUrl(sourceUrl);
+        if (!stored && safeSourceUrl) {
+          const res = await fetch(safeSourceUrl, { referrerPolicy: 'no-referrer' });
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            const safeFileName = sanitizeGlbFileName(`${assetId}.glb`, assetId);
+            await saveGlbAsset(assetId, safeFileName, buf);
+            stored = await getGlbAsset(assetId);
+          }
+        }
+
+        if (!stored || this.disposed) return null;
+
+        const blob = new Blob([stored.buffer], { type: 'model/gltf-binary' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        return await new Promise<ParsedGlbAssetCache | null>((resolve) => {
+          this.app.assets.loadFromUrlAndFilename(
+            blobUrl,
+            stored!.fileName || 'model.glb',
+            'container',
+            (err, asset) => {
+              URL.revokeObjectURL(blobUrl);
+              if (err || !asset || this.disposed) {
+                console.error('Erro ao parsear container GLB:', err);
+                resolve(null);
+                return;
+              }
+              const container = asset.resource as pc.ContainerResource;
+              const parsed = parseGlbContainerPrimitives(assetId, container, hintName);
+              resolve(parsed);
+            }
+          );
+        });
+      } catch (e) {
+        console.error('Erro ao carregar e analisar GLB:', e);
+        return null;
+      }
+    })();
+
+    this.parsedGlbCache.set(assetId, promise);
+    return promise;
+  }
+
+  public async importAndDecomposeGlb(params: {
+    assetId: string;
+    fileName: string;
+    modelName: string;
+    sourceUrl?: string;
+    author?: string;
+    license?: string;
+    decompose?: boolean;
+  }): Promise<void> {
+    const store = useSceneStore.getState();
+    const shouldDecompose = params.decompose !== false;
+
+    const parsed = await this.getOrLoadParsedGlb(
+      params.assetId,
+      params.modelName,
+      params.sourceUrl
+    );
+
+    if (!parsed || parsed.primitives.length === 0) {
+      store.showToast('Falha ao ler elementos 3D do arquivo GLB.');
+      return;
+    }
+
+    const groupId = `grp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const descriptors = buildDecomposedPartDescriptors(parsed, params.modelName, {
+      granularity: 'smart',
+    });
+
+    if (!shouldDecompose || descriptors.length <= 1) {
+      const single = descriptors[0];
+      const inputs = descriptorsToEntityInputs(
+        single ? [single] : descriptors,
+        {
+          assetId: params.assetId,
+          assetFileName: params.fileName,
+          assetSourceUrl: params.sourceUrl,
+          assetAuthor: params.author,
+          assetLicense: params.license,
+          groupId,
+          groupName: params.modelName,
+          dropPosition: [0, 0.1, 0],
+          defaultMaterial: createDefaultMaterial('original'),
+        }
+      );
+      if (inputs.length > 0) {
+        store.addEntity(inputs[0]);
+        store.showToast(`"${params.modelName}" importado para a cena!`);
+      }
+      return;
+    }
+
+    const entityInputs = descriptorsToEntityInputs(descriptors, {
+      assetId: params.assetId,
+      assetFileName: params.fileName,
+      assetSourceUrl: params.sourceUrl,
+      assetAuthor: params.author,
+      assetLicense: params.license,
+      groupId,
+      groupName: params.modelName,
+      dropPosition: [0, 0.1, 0],
+      defaultMaterial: createDefaultMaterial('original'),
+    });
+
+    store.addEntitiesBatch(
+      entityInputs,
+      `Importar ${params.modelName} (${entityInputs.length} elementos 3D)`
+    );
+    store.showToast(
+      `"${params.modelName}" importado com ${entityInputs.length} elementos 3D independentes!`
+    );
+  }
+
+  public async splitExistingGlbEntity(
+    entityId: string,
+    granularity: 'smart' | 'fine' = 'fine'
+  ): Promise<void> {
+    const store = useSceneStore.getState();
+    const target = store.entities.find((e) => e.id === entityId);
+    if (!target || target.kind !== 'glb' || !target.assetId) return;
+
+    const parsed = await this.getOrLoadParsedGlb(
+      target.assetId,
+      target.groupName || target.name,
+      target.assetSourceUrl
+    );
+    if (!parsed) {
+      store.showToast('Não foi possível analisar a geometria interna deste GLB.');
+      return;
+    }
+
+    const baseName = target.groupName || target.name;
+    const groupId =
+      target.groupId ||
+      `grp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const descriptors = target.glbPart
+      ? buildDecomposedPartDescriptors(parsed, target.name, {
+          granularity,
+          onlyPrimIndex: target.glbPart.primIndex,
+          filterIslandIndices: target.glbPart.islandIndices,
+          normScale: target.glbPart.normScale,
+          normOffset: target.glbPart.normOffset,
+          maxTotalParts: 64,
+        })
+      : buildDecomposedPartDescriptors(parsed, baseName, {
+          granularity,
+          maxTotalParts: 64,
+        });
+
+    if (descriptors.length <= 1) {
+      store.showToast('Este elemento 3D já é uma malha única indivisível.');
+      return;
+    }
+
+    // Compute world placement of each sub-part relative to the target entity's current transform
+    const parentRec = this.records.get(entityId);
+    const parentCenter = target.glbPart ? target.glbPart.localCenter : ([0, 0, 0] as Vec3);
+
+    const replacementInputs: Array<Omit<SceneEntityData, 'id'>> = descriptors.map((desc) => {
+      const relX = desc.localCenter[0] - parentCenter[0];
+      const relY = desc.localCenter[1] - parentCenter[1];
+      const relZ = desc.localCenter[2] - parentCenter[2];
+
+      let worldPos: Vec3 = [
+        Number((target.position[0] + relX * target.scale[0]).toFixed(4)),
+        Number((target.position[1] + relY * target.scale[1]).toFixed(4)),
+        Number((target.position[2] + relZ * target.scale[2]).toFixed(4)),
+      ];
+
+      if (parentRec) {
+        const pt = new pc.Vec3(relX, relY, relZ);
+        parentRec.entity.getWorldTransform().transformPoint(pt, pt);
+        worldPos = [
+          Number(pt.x.toFixed(4)),
+          Number(pt.y.toFixed(4)),
+          Number(pt.z.toFixed(4)),
+        ];
+      }
+
+      return {
+        name: desc.name,
+        category: desc.category,
+        kind: 'glb',
+        tags: desc.tags,
+        visible: target.visible,
+        locked: false,
+        position: worldPos,
+        rotation: [...target.rotation] as Vec3,
+        scale: [...target.scale] as Vec3,
+        baseSize: desc.baseSize,
+        material: structuredClone(target.material),
+        assetId: target.assetId,
+        assetFileName: target.assetFileName,
+        assetSourceUrl: target.assetSourceUrl,
+        assetAuthor: target.assetAuthor,
+        assetLicense: target.assetLicense,
+        glbPart: desc.glbPart,
+        groupId,
+        groupName: baseName,
+      };
+    });
+
+    store.replaceEntityWithEntities(
+      entityId,
+      replacementInputs,
+      `Desmembrar ${target.name} em ${replacementInputs.length} partes`
+    );
+    store.showToast(
+      `"${target.name}" separado em ${replacementInputs.length} elementos 3D independentes!`
+    );
+  }
+
   private async loadGlbIntoEntity(rec: ManagedEntityRecord): Promise<void> {
     const { data, entity } = rec;
     if (!data.assetId || this.loadingGlbIds.has(data.id)) return;
     this.loadingGlbIds.add(data.id);
 
     try {
-      let stored = await getGlbAsset(data.assetId);
-      if (!stored && data.assetSourceUrl) {
-        const res = await fetch(data.assetSourceUrl);
-        if (res.ok) {
-          const buf = await res.arrayBuffer();
-          await saveGlbAsset(data.assetId, data.assetFileName || `${data.assetId}.glb`, buf);
-          stored = await getGlbAsset(data.assetId);
-        }
-      }
+      const parsed = await this.getOrLoadParsedGlb(
+        data.assetId,
+        data.groupName || data.name,
+        data.assetSourceUrl
+      );
 
-      if (!stored || this.disposed) {
-        this.loadingGlbIds.delete(data.id);
+      this.loadingGlbIds.delete(data.id);
+      if (!parsed || this.disposed || !entity.parent) return;
+
+      // Case A: Entity represents a specific decomposed 3D element (or single centered part) inside the GLB
+      if (data.glbPart) {
+        const partBuilt = buildCenteredMeshForGlbPart(
+          this.app.graphicsDevice,
+          parsed,
+          data.glbPart
+        );
+        if (!partBuilt) return;
+
+        const mi = new pc.MeshInstance(partBuilt.mesh, partBuilt.material);
+        const partEntity = new pc.Entity(`${data.name}_Mesh`);
+        partEntity.addComponent('render', {
+          meshInstances: [mi],
+          castShadows: true,
+          receiveShadows: true,
+        });
+        entity.addChild(partEntity);
+
+        const origMap = new Map<pc.MeshInstance, pc.Material>();
+        origMap.set(mi, partBuilt.material);
+        rec.originalMaterials = origMap;
+        rec.localPositions = partBuilt.localPositions;
+        rec.localIndices = partBuilt.localIndices;
+
+        if (data.material.preset !== 'original') {
+          this.applyMaterialToRecord(rec);
+        }
+        this.refreshGizmoAttachment();
         return;
       }
 
-      const blob = new Blob([stored.buffer], { type: 'model/gltf-binary' });
-      const blobUrl = URL.createObjectURL(blob);
-
-      this.app.assets.loadFromUrlAndFilename(
-        blobUrl,
-        stored.fileName || 'model.glb',
-        'container',
-        (err, asset) => {
-          URL.revokeObjectURL(blobUrl);
-          this.loadingGlbIds.delete(data.id);
-          if (err || !asset || this.disposed || !entity.parent) {
-            console.error('Erro ao carregar GLB:', err);
-            return;
-          }
-
-          const container = asset.resource as pc.ContainerResource;
-          const modelEntity = container.instantiateRenderEntity({
+      // Case B: Legacy whole-GLB entity without glbPart selector -> build all primitives centered
+      const allDescriptors = buildDecomposedPartDescriptors(parsed, data.name, {
+        granularity: 'smart',
+        maxTotalParts: 1,
+      });
+      if (allDescriptors.length > 0 && parsed.primitives.length === 1) {
+        const partBuilt = buildCenteredMeshForGlbPart(
+          this.app.graphicsDevice,
+          parsed,
+          allDescriptors[0].glbPart
+        );
+        if (partBuilt) {
+          const mi = new pc.MeshInstance(partBuilt.mesh, partBuilt.material);
+          const partEntity = new pc.Entity(`${data.name}_Mesh`);
+          partEntity.addComponent('render', {
+            meshInstances: [mi],
             castShadows: true,
             receiveShadows: true,
           });
-          entity.addChild(modelEntity);
-
-          // Store original materials for toggling back to 'original'
+          entity.addChild(partEntity);
           const origMap = new Map<pc.MeshInstance, pc.Material>();
-          const renders = modelEntity.findComponents('render') as pc.RenderComponent[];
-          for (const r of renders) {
-            for (const mi of r.meshInstances) {
-              if (mi.material) {
-                origMap.set(mi, mi.material);
-              }
-            }
-          }
+          origMap.set(mi, partBuilt.material);
           rec.originalMaterials = origMap;
-
-          // Normalize pivot so bottom of model sits at local Y = 0
-          const aabb = computeEntityWorldAABB(modelEntity);
-          if (aabb) {
-            const min = aabb.getMin();
-            const center = aabb.center;
-            const half = aabb.halfExtents;
-            const localPos = entity.getPosition();
-            modelEntity.setLocalPosition(
-              localPos.x - center.x,
-              localPos.y - min.y,
-              localPos.z - center.z
-            );
-
-            // Auto-normalize huge or tiny models on first load if baseSize isn't set
-            const maxDim = Math.max(half.x * 2, half.y * 2, half.z * 2);
-            if (!data.baseSize && maxDim > 0.001) {
-              const baseSize: Vec3 = [
-                Number((half.x * 2).toFixed(3)),
-                Number((half.y * 2).toFixed(3)),
-                Number((half.z * 2).toFixed(3)),
-              ];
-              let autoScale = data.scale;
-              if (maxDim > 8) {
-                const factor = 1.5 / maxDim;
-                autoScale = [factor, factor, factor];
-              } else if (maxDim < 0.05) {
-                const factor = 1.0 / maxDim;
-                autoScale = [factor, factor, factor];
-              }
-              useSceneStore.getState().updateEntityDirect(data.id, {
-                baseSize,
-                scale: autoScale,
-              });
-            }
-          }
-
+          rec.localPositions = partBuilt.localPositions;
+          rec.localIndices = partBuilt.localIndices;
           if (data.material.preset !== 'original') {
             this.applyMaterialToRecord(rec);
           }
           this.refreshGizmoAttachment();
+          return;
         }
-      );
+      }
+
+      // Multi-primitive legacy whole GLB: render all primitives under entity
+      const origMap = new Map<pc.MeshInstance, pc.Material>();
+      const meshInstances: pc.MeshInstance[] = [];
+      for (const prim of parsed.primitives) {
+        const built = buildCenteredMeshForGlbPart(this.app.graphicsDevice, parsed, {
+          primIndex: prim.primIndex,
+          normScale: parsed.defaultNormScale,
+          normOffset: parsed.defaultNormOffset,
+          localCenter: [0, 0, 0],
+        });
+        if (built) {
+          const mi = new pc.MeshInstance(built.mesh, built.material);
+          meshInstances.push(mi);
+          origMap.set(mi, built.material);
+        }
+      }
+      if (meshInstances.length > 0) {
+        const modelEntity = new pc.Entity(`${data.name}_Whole`);
+        modelEntity.addComponent('render', {
+          meshInstances,
+          castShadows: true,
+          receiveShadows: true,
+        });
+        entity.addChild(modelEntity);
+        rec.originalMaterials = origMap;
+        if (data.material.preset !== 'original') {
+          this.applyMaterialToRecord(rec);
+        }
+        this.refreshGizmoAttachment();
+      }
     } catch (e) {
       this.loadingGlbIds.delete(data.id);
       console.error('Falha ao carregar asset GLB:', e);
@@ -897,7 +1219,7 @@ export class PlayCanvasEngine {
     this.pointerDownPos = null;
     if (moved > 5) return; // User was orbiting camera
 
-    // Raycast against all visible unlocked entities
+    // Raycast against all visible unlocked entities (broadphase AABB + exact triangle mesh intersection for GLB elements)
     const ray = this.screenToRay(e.clientX, e.clientY);
     let closestId: string | null = null;
     let closestDist = Infinity;
@@ -906,9 +1228,21 @@ export class PlayCanvasEngine {
       if (!rec.data.visible || rec.data.locked) continue;
       const aabb = computeEntityWorldAABB(rec.entity);
       if (!aabb) continue;
-      const t = intersectRayAABB(ray, aabb);
-      if (t !== null && t < closestDist) {
-        closestDist = t;
+      const aabbT = intersectRayAABB(ray, aabb);
+      if (aabbT === null || aabbT > closestDist) continue;
+
+      let exactT: number | null = aabbT;
+      if (rec.localPositions && rec.localIndices && rec.localIndices.length >= 3) {
+        exactT = intersectRayTriangleMeshWorld(
+          ray,
+          rec.entity.getWorldTransform(),
+          rec.localPositions,
+          rec.localIndices
+        );
+      }
+
+      if (exactT !== null && exactT < closestDist) {
+        closestDist = exactT;
         closestId = id;
       }
     }
@@ -1069,6 +1403,24 @@ export class PlayCanvasEngine {
         const aabb = computeEntityWorldAABB(rec.entity);
         if (aabb) {
           this.drawWireBox(aabb, new pc.Color(0.23, 0.56, 1.0, 1));
+        }
+
+        // If groupTransformMode is enabled and selected entity belongs to a multi-part GLB group,
+        // highlight sibling parts in cyan so the user sees the active assembly
+        if (useSceneStore.getState().groupTransformMode && rec.data.groupId) {
+          const siblingColor = new pc.Color(0.15, 0.82, 0.95, 0.65);
+          for (const [peerId, peerRec] of this.records.entries()) {
+            if (
+              peerId !== this.selectedId &&
+              peerRec.data.groupId === rec.data.groupId &&
+              peerRec.data.visible
+            ) {
+              const peerAabb = computeEntityWorldAABB(peerRec.entity);
+              if (peerAabb) {
+                this.drawWireBox(peerAabb, siblingColor);
+              }
+            }
+          }
         }
       }
     }
