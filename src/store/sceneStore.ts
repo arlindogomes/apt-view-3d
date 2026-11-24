@@ -220,6 +220,17 @@ function normalizeLighting(val: unknown): LightingPreset {
   return 'studio_neutral';
 }
 
+const LEGACY_SAMPLE_IDS = new Set([
+  'floor-main-01',
+  'wall-north-01',
+  'wall-west-01',
+  'door-entry-01',
+  'window-north-01',
+  'pillar-corner-01',
+  'block-table-01',
+  'light-sun-01',
+]);
+
 function loadDraft(): {
   projectName: string;
   lighting: LightingPreset;
@@ -229,21 +240,25 @@ function loadDraft(): {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SceneDocument>;
-      if (Array.isArray(parsed.entities) && parsed.entities.length > 0) {
+      if (Array.isArray(parsed.entities)) {
+        // If draft contains only the old built-in sample entities, start clean & empty
+        const isOnlyLegacySample =
+          parsed.entities.length > 0 &&
+          parsed.entities.every((e) => LEGACY_SAMPLE_IDS.has(e.id));
         return {
           projectName: parsed.projectName || 'planta-principal',
           lighting: normalizeLighting(parsed.lighting),
-          entities: parsed.entities,
+          entities: isOnlyLegacySample ? [] : parsed.entities,
         };
       }
     }
   } catch {
-    // fallback to sample
+    // fallback to empty scene
   }
   return {
     projectName: 'planta-principal',
     lighting: 'studio_neutral',
-    entities: createSampleEntities(),
+    entities: [],
   };
 }
 
